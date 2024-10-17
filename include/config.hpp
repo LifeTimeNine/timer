@@ -16,6 +16,18 @@ class Config
      * HTTP服务端口
      */
     unsigned short httpPort = 10010;
+    /**
+     * 日志目录
+     */
+    std::string logDir = "/var/log/timer";
+    /**
+     * 日志等级
+     */
+    unsigned short logLevel = 0;
+    /**
+     * 数据库路径
+     */
+    std::string dbPath = "/var/lib/timer/task.db";
 
   public:
     /** 
@@ -42,4 +54,16 @@ class Config
      * 获取HTTP服务端口
      */
     unsigned short getHttpPort();
+    /**
+     * 获取日志路径
+     */
+    std::string getLogDir();
+    /**
+     * 获取日志等级
+     */
+    unsigned short getLogLevel();
+    /**
+     * 获取数据库文件路径
+     */
+    std::string getDbPath();
 };

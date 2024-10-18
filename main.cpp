@@ -2,8 +2,12 @@
 #include "cmdline.h"
 #include "config.hpp"
 #include "log.hpp"
+#include "taskTable.hpp"
+
+#include "message.hpp"
 
 Config* config = nullptr;
+TaskTable* taskTable = nullptr;
 
 int main(int argc, char *argv[])
 {
@@ -21,6 +25,18 @@ int main(int argc, char *argv[])
 
   // 初始化日志模块
   Log::initiate(config->getLogDir(), config->getLogLevel());
+
+  try
+  {
+    taskTable = new TaskTable(config->getDbPath());
+  }
+  catch(const std::exception& e)
+  {
+    Log::error("Task Table initiate fail: {}", e.what());
+    return EXIT_FAILURE;
+  }
+  
+  Log::info("initiate success");
 
   delete config;
 

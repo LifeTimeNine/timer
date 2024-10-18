@@ -7,6 +7,8 @@ add_definitions(-DSPDLOG_COMPILED_LIB)
 include_directories(library/cmdline)
 # 引入httplib
 include_directories(library/httplib)
+# 引入nlohmann
+include_directories(library/nlohmann)
 # 引入simpleini
 include_directories(library/simpleini)
 aux_source_directory(library/simpleini LIBRARY_SIMPLEINI)

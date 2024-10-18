@@ -15,9 +15,6 @@ class Task
 {
   public:
     std::string uuid;
-    std::string appMark;
-    std::string appName;
-    std::string title;
     std::string execFile;
     std::string args;
     bool loop;

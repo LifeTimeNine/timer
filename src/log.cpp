@@ -10,7 +10,7 @@ void Log::initiate(std::string dir, unsigned short level)
 
 #ifndef NDEBUG
   std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-  consoleSink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] %v");
+  consoleSink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
 #endif
 
   std::vector<spdlog::sink_ptr> sinks{

@@ -18,8 +18,18 @@ aux_source_directory(library/spdlog/src LIBRARY_SPDLOG)
 # 引入sqlite
 include_directories(library/sqlite)
 aux_source_directory(library/sqlite LIBRARY_SQLITE)
+# 引入 tiny-process-library
+include_directories(library/tiny-process-library)
+set(LIBRAYRY_TINY_PROCESS_LIBRARY library/tiny-process-library/process.cpp library/tiny-process-library/process_unix.cpp)
 
 include_directories(include)
 aux_source_directory(src SOURCE)
 
-add_executable(timer main.cpp ${SOURCE} ${LIBRARY_SIMPLEINI} ${LIBRARY_SPDLOG} ${LIBRARY_SQLITE})
+set(LIBRARY_SOURCE
+  ${LIBRARY_SIMPLEINI}
+  ${LIBRARY_SPDLOG}
+  ${LIBRARY_SQLITE}
+  ${LIBRAYRY_TINY_PROCESS_LIBRARY}
+)
+
+add_executable(timer main.cpp ${SOURCE} ${LIBRARY_SOURCE})

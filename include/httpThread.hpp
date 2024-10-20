@@ -21,9 +21,9 @@ class HttpThread
      */
     HttpThread(Config* config, TaskTable* taskTable);
     /**
-     * 监听
+     * 启动
      */
-    void listen();
+    void start();
     /**
      * 是否在运行
      */

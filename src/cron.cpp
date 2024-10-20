@@ -40,7 +40,7 @@ unsigned short Cron::getWeekRange()
   return weekRange;
 }
 
-bool Cron::checkExecute(unsigned short minute, unsigned short hour, unsigned short day, unsigned short month, unsigned short week)
+bool Cron::checkExecute(unsigned short second, unsigned short minute, unsigned short hour, unsigned short day, unsigned short month, unsigned short week)
 {
   unsigned long tmp = 1;
   return (minuteRange & (tmp << minute)) > 0

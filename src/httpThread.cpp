@@ -19,7 +19,7 @@ server()
   running();
 }
 
-void HttpThread::listen()
+void HttpThread::start()
 {
   std::thread t([this]() {
     Log::trace("<{}> listen: {}:{}", "http_server", config->getHttpHost(), config->getHttpPort());
@@ -41,7 +41,7 @@ void HttpThread::close()
 void HttpThread::watch()
 {
   if (!isRunning()) {
-    listen();
+    start();
   }
 }
 
@@ -139,7 +139,7 @@ void HttpThread::task()
 
 void HttpThread::running()
 {
-  server.Post("/running", [this](const httplib::Request& request, httplib::Response& response) {
+  server.Post("/run", [this](const httplib::Request& request, httplib::Response& response) {
     Log::debug("<{}> post running", "http_server");
     message::TaskOperation taskOperation;
     try

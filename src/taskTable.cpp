@@ -2,10 +2,29 @@
 #include <string>
 #include <map>
 #include <sys/stat.h>
+#include <thread>
 #include "taskTable.hpp"
 #include "log.hpp"
 #include "cron.hpp"
+#include "process.hpp"
 
+void Task::run(Config* config)
+{
+  std::thread t([this, config]() {
+    // 记录开始时间
+    auto startTime = std::chrono::system_clock::now();
+    // TODO 通知任务开始运行
+    std::string command = execFile;
+    if (!args.empty()) execFile += " " + args;
+    std::string output, error;
+    TinyProcessLib::Process process(command, "", [&output](const char *bytes, size_t length) {
+      output = std::string(bytes, length);
+    }, [&error](const char *bytes, size_t length) {
+      error = std::string(bytes, length);
+    });
+    int exitCode = process.get_exit_status();
+  });
+}
 
 TaskTable::TaskTable(std::string dbPath): dbPath(dbPath), db(nullptr), table(), mutex()
 {
@@ -25,6 +44,7 @@ TaskTable::TaskTable(std::string dbPath): dbPath(dbPath), db(nullptr), table(), 
     throw std::runtime_error("db open fail[" + std::string(sqlite3_errmsg(db)) + "]");
     return;
   }
+  Log::trace("<{}> db path: {}", "http_thread", dbPath);
   char* errmsg;
   int result;
   // 创建Table
@@ -110,7 +130,7 @@ void TaskTable::set(Task task)
   if (isExist) {
     sql = "UPDATE task SET exec_file=?,args=?,loop=?,enable=?,cron=? WHERE uuid=?;";
   } else {
-    sql = "INSERT INTO task (exec_file,args,loop,enable,cron,uuid) VALUES(?,?,?,?,?,?,?,?,?);";
+    sql = "INSERT INTO task (exec_file,args,loop,enable,cron,uuid) VALUES(?,?,?,?,?,?);";
   }
   if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
     Log::error("<{}> sqlite {} sql prepare fail: [{}] {}", "task_table", std::string(isExist?"update":"insert"), task.uuid, std::string(sqlite3_errmsg(db)));

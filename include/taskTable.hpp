@@ -7,8 +7,8 @@
 #include <vector>
 
 #include "sqlite3.h"
-
 #include "cron.hpp"
+#include "config.hpp"
 
 // 任务信息
 class Task
@@ -22,9 +22,14 @@ class Task
     std::string cron;
 
     Cron cronRange;
-    unsigned int nextRunningTime = 0;
 
     Task(): cronRange() {}
+
+    /**
+     * 运行
+     * @param config  配置类
+     */
+    void run(Config* config);
 };
 
 /**

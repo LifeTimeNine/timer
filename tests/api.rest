@@ -1,0 +1,36 @@
+### 保存任务
+POST http://127.0.0.1:10010/task
+Content-Type: application/json
+
+{
+  "uuid": "task1",
+  "exec_file": "/bin/echo",
+  "args": "123",
+  "loop": true,
+  "enable": false,
+  "cron": "* * * * *"
+}
+
+### 获取任务列表
+GET http://127.0.0.1:10010/task
+
+### 获取任务详情
+GET http://127.0.0.1:10010/task
+  ?uuid=task1
+
+### 删除任务
+DELETE http://127.0.0.1:10010/task
+Content-Type: application/json
+
+{
+  "uuid": "task1"
+}
+
+
+### 运行任务
+POST http://127.0.0.1:10010/run
+Content-Type: application/json
+
+{
+  "uuid": "task1"
+}

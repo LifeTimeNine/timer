@@ -51,7 +51,7 @@ public:
    * @param month   月
    * @param week    周
    */
-  bool checkExecute(unsigned short minute, unsigned short hour, unsigned short day, unsigned short month, unsigned short week);
+  bool checkExecute(unsigned short second, unsigned short minute, unsigned short hour, unsigned short day, unsigned short month, unsigned short week);
 
   /**
    * 解析

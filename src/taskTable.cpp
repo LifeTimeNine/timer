@@ -6,7 +6,7 @@
 #include "taskTable.hpp"
 #include "log.hpp"
 #include "cron.hpp"
-#include "process.hpp"
+// #include "process.hpp"
 
 void Task::run(Config* config)
 {
@@ -14,15 +14,15 @@ void Task::run(Config* config)
     // 记录开始时间
     auto startTime = std::chrono::system_clock::now();
     // TODO 通知任务开始运行
-    std::string command = execFile;
-    if (!args.empty()) execFile += " " + args;
-    std::string output, error;
-    TinyProcessLib::Process process(command, "", [&output](const char *bytes, size_t length) {
-      output = std::string(bytes, length);
-    }, [&error](const char *bytes, size_t length) {
-      error = std::string(bytes, length);
-    });
-    int exitCode = process.get_exit_status();
+    // std::string command = execFile;
+    // if (!args.empty()) execFile += " " + args;
+    // std::string output, error;
+    // TinyProcessLib::Process process(command, "", [&output](const char *bytes, size_t length) {
+    //   output = std::string(bytes, length);
+    // }, [&error](const char *bytes, size_t length) {
+    //   error = std::string(bytes, length);
+    // });
+    // int exitCode = process.get_exit_status();
   });
 }
 

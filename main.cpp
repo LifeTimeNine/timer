@@ -52,13 +52,13 @@ int main(int argc, char *argv[])
     tm* time = std::localtime(&now);
 
     // 循环任务表
-      for(Task task : taskTable->list()) {
-        // 如果不是循环执行，或者未启用
-        if (!task.loop || !task.enable) continue;
-        if (task.cronRange.checkExecute(time->tm_sec, time->tm_min, time->tm_hour, time->tm_mday, time->tm_mon + 1, time->tm_wday)) {
-          // TODO 运行任务
-        }
+    for(Task task : taskTable->list()) {
+      // 如果不是循环执行，或者未启用
+      if (!task.loop || !task.enable) continue;
+      if (task.cronRange.checkExecute(time->tm_sec, time->tm_min, time->tm_hour, time->tm_mday, time->tm_mon + 1, time->tm_wday)) {
+        // TODO 运行任务
       }
+    }
   });
 
   // 设置定时器参数

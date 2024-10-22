@@ -7,6 +7,8 @@
 #include "taskTable.hpp"
 #include "httpThread.hpp"
 
+#include "notify.hpp"
+
 Config* config = nullptr;
 TaskTable* taskTable = nullptr;
 HttpThread* httpThread = nullptr;
@@ -56,7 +58,8 @@ int main(int argc, char *argv[])
       // 如果不是循环执行，或者未启用
       if (!task.loop || !task.enable) continue;
       if (task.cronRange.checkExecute(time->tm_sec, time->tm_min, time->tm_hour, time->tm_mday, time->tm_mon + 1, time->tm_wday)) {
-        // TODO 运行任务
+        // 运行任务
+        task.run(config);
       }
     }
   });

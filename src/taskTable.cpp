@@ -6,24 +6,51 @@
 #include "taskTable.hpp"
 #include "log.hpp"
 #include "cron.hpp"
-// #include "process.hpp"
+#include "process.hpp"
+#include "message.hpp"
+#include "util.hpp"
+#include "notify.hpp"
 
 void Task::run(Config* config)
 {
   std::thread t([this, config]() {
+    Log::info("task run start [uuid: {}]", uuid);
     // 记录开始时间
     auto startTime = std::chrono::system_clock::now();
-    // TODO 通知任务开始运行
-    // std::string command = execFile;
-    // if (!args.empty()) execFile += " " + args;
-    // std::string output, error;
-    // TinyProcessLib::Process process(command, "", [&output](const char *bytes, size_t length) {
-    //   output = std::string(bytes, length);
-    // }, [&error](const char *bytes, size_t length) {
-    //   error = std::string(bytes, length);
+    message::Result result;
+    result.uuid = uuid;
+    // result.startTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", startTime);
+    // 通知任务开始运行
+    // std::thread taskStartNotifyThread([this, config]() {
+    //   notify::taskStart(config->getNotifyUrl(), uuid);
     // });
-    // int exitCode = process.get_exit_status();
+    // taskStartNotifyThread.detach();
+
+    // try
+    // {
+    //   Process process(execFile, args);
+    // result.isNormalExit = process.getExitStatus() == 0;
+    // }
+    // catch(const std::exception& e)
+    // {
+    //   Log::error("error: {}", e.what());
+    // }
+    
+    // auto endTime = std::chrono::system_clock::now();
+    // result.endTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", endTime);
+    // std::stringstream str;
+    // str << std::setprecision(3) << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count()) / 1000;
+    // result.runtime = str.str();
+    // result.out = process.getStdout();
+    // result.err = process.getStderr();
+    // 通知任务运行结束
+    // std::thread taskFinishNotifyThread([this, config, &result]() {
+    //   notify::taskFinish(config->getNotifyUrl(), &result);
+    // });
+    // taskFinishNotifyThread.detach();
+    Log::info("task run finish [uuid: {}]", uuid);
   });
+  t.detach();
 }
 
 TaskTable::TaskTable(std::string dbPath): dbPath(dbPath), db(nullptr), table(), mutex()
@@ -44,11 +71,11 @@ TaskTable::TaskTable(std::string dbPath): dbPath(dbPath), db(nullptr), table(), 
     throw std::runtime_error("db open fail[" + std::string(sqlite3_errmsg(db)) + "]");
     return;
   }
-  Log::trace("<{}> db path: {}", "http_thread", dbPath);
+  Log::info("<{}> db path: {}", "task_table", dbPath);
   char* errmsg;
   int result;
   // 创建Table
-  std::string createTableSql("CREATE TABLE IF NOT EXISTS task (uuid TEXT PRIMARY KEY, title TEXT, exec_file TEXT, args TEXT, loop INTEGER, enable INTEGER, cron TEXT);");
+  std::string createTableSql("CREATE TABLE IF NOT EXISTS task (uuid TEXT PRIMARY KEY, exec_file TEXT, args TEXT, loop INTEGER, enable INTEGER, cron TEXT);");
   result = sqlite3_exec(db, createTableSql.c_str(), nullptr, nullptr, &errmsg);
   if (result != SQLITE_OK) {
     throw std::runtime_error("sqlite table create fail [" + std::string(errmsg) + "]");

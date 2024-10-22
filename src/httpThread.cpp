@@ -22,7 +22,7 @@ server()
 void HttpThread::start()
 {
   std::thread t([this]() {
-    Log::trace("<{}> listen: {}:{}", "http_server", config->getHttpHost(), config->getHttpPort());
+    Log::info("<{}> listen: {}:{}", "http_server", config->getHttpHost(), config->getHttpPort());
     server.listen(config->getHttpHost(), config->getHttpPort());
   });
   t.detach();
@@ -48,7 +48,7 @@ void HttpThread::watch()
 void HttpThread::task()
 {
   server.Get("/task", [this](const httplib::Request& request, httplib::Response& response) {
-    Log::debug("<{}> get task", "http_server");
+    Log::info("<{}> get task", "http_server");
     if (request.has_param("uuid")) {
       if (taskTable->exist(request.get_param_value("uuid"))) {
         Task taskInfo = taskTable->get(request.get_param_value("uuid"));
@@ -85,7 +85,7 @@ void HttpThread::task()
   });
 
   server.Post("/task", [this](const httplib::Request& request, httplib::Response& response) {
-    Log::debug("<{}> post task", "http_server");
+    Log::info("<{}> post task", "http_server");
     message::Task task;
     try
     {
@@ -111,7 +111,7 @@ void HttpThread::task()
   });
 
   server.Delete("/task", [this](const httplib::Request& request, httplib::Response& response) {
-    Log::debug("<{}> delete task", "http_server");
+    Log::info("<{}> delete task", "http_server");
 
     message::TaskOperation taskOperation;
     try
@@ -140,7 +140,7 @@ void HttpThread::task()
 void HttpThread::running()
 {
   server.Post("/run", [this](const httplib::Request& request, httplib::Response& response) {
-    Log::debug("<{}> post running", "http_server");
+    Log::info("<{}> post run", "http_server");
     message::TaskOperation taskOperation;
     try
     {
@@ -159,7 +159,8 @@ void HttpThread::running()
       return;
     }
     Task task = taskTable->get(taskOperation.uuid);
-    // TODO Running Task
+    // 运行任务
+    task.run(config);
     response.set_content("success", "text/plain");
   });
 }

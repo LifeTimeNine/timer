@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.5.0)
 project(timer VERSION 0.1.0 LANGUAGES C CXX)
 
+# 启用spdlog
 add_definitions(-DSPDLOG_COMPILED_LIB)
 
+# 引入 ada
+include_directories(library/ada)
+set(LIBRARY_ADA library/ada/ada.cpp)
 # 引入cmdline
 include_directories(library/cmdline)
 # 引入httplib
@@ -23,6 +27,7 @@ include_directories(include)
 aux_source_directory(src SOURCE)
 
 set(LIBRARY_SOURCE
+  ${LIBRARY_ADA}
   ${LIBRARY_SIMPLEINI}
   ${LIBRARY_SPDLOG}
   ${LIBRARY_SQLITE}

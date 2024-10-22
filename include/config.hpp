@@ -9,6 +9,14 @@ class Config
 {
   private:
     /**
+     * Pid文件地址
+     */
+    std::string pidFile = "/tmp/timer.pid";
+    /**
+     * 通知地址
+     */
+    std::string notifyUrl;
+    /**
      * HTTP服务地址
      */
     std::string httpHost = "127.0.0.1";
@@ -36,6 +44,14 @@ class Config
     */
     Config(std::string file);
 
+    /**
+     * 获取Pid文件地址
+     */
+    std::string getPidFile();
+    /**
+     * 获取通知地址
+     */
+    std::string getNotifyUrl();
     /**
      * 设置HTTP服务地址
      * @param host  地址

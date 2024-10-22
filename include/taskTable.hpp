@@ -27,9 +27,10 @@ class Task
 
     /**
      * 运行
+     * @param task    任务类
      * @param config  配置类
      */
-    void run(Config* config);
+    static void run(const Task task, Config* config);
 };
 
 /**

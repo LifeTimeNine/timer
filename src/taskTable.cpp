@@ -11,44 +11,37 @@
 #include "util.hpp"
 #include "notify.hpp"
 
-void Task::run(Config* config)
+void Task::run(const Task task, Config* config)
 {
-  std::thread t([this, config]() {
-    Log::info("task run start [uuid: {}]", uuid);
+  std::thread t([task, config]() {
+    Log::info("task run [uuid: {}]", task.uuid);
     // 记录开始时间
     auto startTime = std::chrono::system_clock::now();
     message::Result result;
-    result.uuid = uuid;
-    // result.startTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", startTime);
+    result.uuid = task.uuid;
+    result.startTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", startTime);
     // 通知任务开始运行
-    // std::thread taskStartNotifyThread([this, config]() {
-    //   notify::taskStart(config->getNotifyUrl(), uuid);
-    // });
-    // taskStartNotifyThread.detach();
+    std::thread taskStartNotifyThread([&task, config]() {
+      notify::taskStart(config->getNotifyUrl(), task.uuid);
+    });
+    taskStartNotifyThread.detach();
 
-    // try
-    // {
-    //   Process process(execFile, args);
-    // result.isNormalExit = process.getExitStatus() == 0;
-    // }
-    // catch(const std::exception& e)
-    // {
-    //   Log::error("error: {}", e.what());
-    // }
-    
-    // auto endTime = std::chrono::system_clock::now();
-    // result.endTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", endTime);
-    // std::stringstream str;
-    // str << std::setprecision(3) << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count()) / 1000;
-    // result.runtime = str.str();
-    // result.out = process.getStdout();
-    // result.err = process.getStderr();
+    Process process(task.execFile, task.args);
+    auto exitStatus = process.getExitStatus();
+    Log::debug("exit status: {}", exitStatus);
+    result.isNormalExit = exitStatus == 0;
+    auto endTime = std::chrono::system_clock::now();
+    result.endTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", endTime);
+    std::stringstream str;
+    str << std::setprecision(3) << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count()) / 1000;
+    result.runtime = str.str();
+    result.out = process.getStdout();
+    result.err = process.getStderr();
     // 通知任务运行结束
-    // std::thread taskFinishNotifyThread([this, config, &result]() {
-    //   notify::taskFinish(config->getNotifyUrl(), &result);
-    // });
-    // taskFinishNotifyThread.detach();
-    Log::info("task run finish [uuid: {}]", uuid);
+    std::thread taskFinishNotifyThread([config, result]() {
+      notify::taskFinish(config->getNotifyUrl(), &result);
+    });
+    taskFinishNotifyThread.detach();
   });
   t.detach();
 }

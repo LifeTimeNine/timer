@@ -64,10 +64,10 @@ class Process
     std::mutex closeMutex, stdinMutex;
     std::thread stdoutThread, stderrThread;
     size_t bufferSize;
-    std::unique_ptr<pid_t> stdoutFd, stderrFd, stdinFd;
+    std::unique_ptr<int> stdoutFd, stderrFd, stdinFd;
     std::string stdoutContent, stderrContent;
 
-    pid_t open(std::function<void()> function);
+    void open(std::function<void()> function);
     void asyncRead();
     void closeFds();
 };

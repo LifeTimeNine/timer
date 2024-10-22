@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
       if (!task.loop || !task.enable) continue;
       if (task.cronRange.checkExecute(time->tm_sec, time->tm_min, time->tm_hour, time->tm_mday, time->tm_mon + 1, time->tm_wday)) {
         // 运行任务
-        task.run(config);
+        Task::run(task, config);
       }
     }
   });

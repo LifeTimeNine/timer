@@ -1,19 +1,20 @@
 #include "process.hpp"
 #include <unistd.h>
-#include <wait.h>
+#include <sys/wait.h>
 #include <sstream>
 
 Process::Data::Data(): pid(-1) {}
 
 Process::Process(const std::string &path, const std::string &args,
           size_t bufferSize):
-          bufferSize(bufferSize), stdoutContent(), stderrContent() {
+          bufferSize(bufferSize), stdoutContent(), stderrContent(), data() {
   std::istringstream iss(args);
   std::vector<char*> argv;
   std::string arg;
   while(iss >> arg) argv.push_back(arg.data());
   open([this, &path, &argv]() {
-    execvp(path.data(), argv.data());
+    auto res = execv(path.data(), argv.data());
+    std::cout << "exec: " << res << std::endl;
   });
   asyncRead();
 }
@@ -22,7 +23,7 @@ pid_t Process::getPid() const {
   return data.pid;
 }
 
-pid_t Process::open(std::function<void()> function) {
+void Process::open(std::function<void()> function) {
   stdinFd = std::unique_ptr<int>(new int);
   stdoutFd = std::unique_ptr<int>(new int);
   stderrFd = std::unique_ptr<int>(new int);
@@ -30,55 +31,51 @@ pid_t Process::open(std::function<void()> function) {
   int stdinP[2], stdoutP[2], stderrP[2];
 
   if(stdinFd && pipe(stdinP)!=0)
-    return -1;
+    return;
   if(stdoutFd && pipe(stdoutP)!=0) {
     if(stdinFd) {close(stdinP[0]);close(stdinP[1]);}
-    return -1;
+    return;
   }
   if(stderrFd && pipe(stderrP)!=0) {
     if(stdinFd) {close(stdinP[0]);close(stdinP[1]);}
     if(stdoutFd) {close(stdoutP[0]);close(stdoutP[1]);}
-    return -1;
+    return;
   }
   
   pid_t pid = fork();
-  
   if (pid < 0) {
     if(stdinFd) {close(stdinP[0]);close(stdinP[1]);}
     if(stdoutFd) {close(stdoutP[0]);close(stdoutP[1]);}
     if(stderrFd) {close(stderrP[0]);close(stderrP[1]);}
-    return pid;
+    return;
+  }
+  else if (pid > 0) {
+    if(stdinFd) close(stdinP[0]);
+    if(stdoutFd) close(stdoutP[1]);
+    if(stderrFd) close(stderrP[1]);
+    
+    if(stdinFd) *stdinFd = stdinP[1];
+    if(stdoutFd) *stdoutFd = stdoutP[0];
+    if(stderrFd) *stderrFd = stderrP[0];
+
+    data.pid=pid;
+    return;
   }
   else if (pid == 0) {
-    if(stdinFd) dup2(stdinP[0], 0);
-    if(stdoutFd) dup2(stdoutP[1], 1);
-    if(stderrFd) dup2(stderrP[1], 2);
-    if(stdinFd) {close(stdinP[0]);close(stdinP[1]);}
-    if(stdoutFd) {close(stdoutP[0]);close(stdoutP[1]);}
-    if(stderrFd) {close(stderrP[0]);close(stderrP[1]);}
-  
+    if(stdinFd) {dup2(stdinP[0], 0);close(stdinP[1]);}
+    if(stdoutFd) {dup2(stdoutP[1], 1);close(stdoutP[0]);}
+    if(stderrFd) {dup2(stderrP[1], 2);close(stderrP[0]);}
+
     int fd_max=static_cast<int>(sysconf(_SC_OPEN_MAX));
     for(int fd=3;fd<fd_max;fd++)
       close(fd);
   
     setpgid(0, 0);
-    
-    if(function)
-      function();
-    
-    _exit(EXIT_FAILURE);
-  }
-  
-  if(stdinFd) close(stdinP[0]);
-  if(stdoutFd) close(stdoutP[1]);
-  if(stderrFd) close(stderrP[1]);
-  
-  if(stdinFd) *stdinFd = stdinP[1];
-  if(stdoutFd) *stdoutFd = stdoutP[0];
-  if(stderrFd) *stderrFd = stderrP[0];
 
-  data.pid=pid;
-  return pid;
+    function();
+    
+    exit(EXIT_FAILURE);
+  }
 }
 
 void Process::asyncRead() {
@@ -113,7 +110,7 @@ int Process::getExitStatus() {
   closeFds();
 
   if(exitStatus>=256)
-    exitStatus = exitStatus >> 8;
+    exitStatus >>= 8;
   return exitStatus;
 }
 

@@ -160,7 +160,7 @@ void HttpThread::running()
     }
     Task task = taskTable->get(taskOperation.uuid);
     // 运行任务
-    task.run(config);
+    Task::run(task, config);
     response.set_content("success", "text/plain");
   });
 }

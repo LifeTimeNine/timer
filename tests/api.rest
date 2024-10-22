@@ -4,8 +4,8 @@ Content-Type: application/json
 
 {
   "uuid": "task1",
-  "exec_file": "/bin/echo",
-  "args": "123",
+  "exec_file": "/bin/sh",
+  "args": "-c /home/lifetime/timer/test.sh",
   "loop": true,
   "enable": false,
   "cron": "* * * * *"

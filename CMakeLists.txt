@@ -9,6 +9,9 @@ include_directories(library/ada)
 set(LIBRARY_ADA library/ada/ada.cpp)
 # 引入cmdline
 include_directories(library/cmdline)
+# 引入date
+include_directories(library/date/include)
+# aux_source_directory(library/date/src LIBRARY_DATE)
 # 引入httplib
 include_directories(library/httplib)
 # 引入nlohmann
@@ -28,6 +31,7 @@ aux_source_directory(src SOURCE)
 
 set(LIBRARY_SOURCE
   ${LIBRARY_ADA}
+  # ${LIBRARY_DATE}
   ${LIBRARY_SIMPLEINI}
   ${LIBRARY_SPDLOG}
   ${LIBRARY_SQLITE}

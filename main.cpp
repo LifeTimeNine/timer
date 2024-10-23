@@ -7,8 +7,6 @@
 #include "taskTable.hpp"
 #include "httpThread.hpp"
 
-#include "notify.hpp"
-
 Config* config = nullptr;
 TaskTable* taskTable = nullptr;
 HttpThread* httpThread = nullptr;

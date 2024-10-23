@@ -1,3 +1,6 @@
+### 获取服务状态
+GET http://127.0.0.1:10010
+
 ### 保存任务
 POST http://127.0.0.1:10010/task
 Content-Type: application/json
@@ -5,9 +8,9 @@ Content-Type: application/json
 {
   "uuid": "task1",
   "exec_file": "/bin/sh",
-  "args": "-c /home/lifetime/timer/test.sh",
+  "args": "-c /timer/test.sh",
   "loop": true,
-  "enable": false,
+  "enable": true,
   "cron": "* * * * *"
 }
 

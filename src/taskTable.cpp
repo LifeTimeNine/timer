@@ -27,9 +27,7 @@ void Task::run(const Task task, Config* config)
     taskStartNotifyThread.detach();
 
     Process process(task.execFile, task.args);
-    auto exitStatus = process.getExitStatus();
-    Log::debug("exit status: {}", exitStatus);
-    result.isNormalExit = exitStatus == 0;
+    result.isNormalExit = process.getExitStatus() == 0;
     auto endTime = std::chrono::system_clock::now();
     result.endTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", endTime);
     std::stringstream str;

@@ -8,6 +8,7 @@
 class Cron
 {
 private:
+  unsigned long secondRange;
   unsigned long minuteRange;
   unsigned int hourRange;
   unsigned int dayRange;
@@ -15,6 +16,7 @@ private:
   unsigned short weekRange;
 public:
   Cron(
+    unsigned long secondRange = 0,
     unsigned long minuteRange = 0,
     unsigned int hourRange = 0,
     unsigned int dayRange = 0,
@@ -22,6 +24,10 @@ public:
     unsigned short weekRange = 0
   );
 
+  /**
+   * 获取秒范围
+   */
+  unsigned long getSecondRange();
   /**
    * 获取分钟范围
    */

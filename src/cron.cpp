@@ -4,16 +4,23 @@
 #include "util.hpp"
 
 Cron::Cron(
+  unsigned long secondRange,
     unsigned long minuteRange,
     unsigned int hourRange,
     unsigned int dayRange,
     unsigned short monthRange,
     unsigned short weekRange
-  ): minuteRange(minuteRange),
+  ): secondRange(secondRange),
+  minuteRange(minuteRange),
   hourRange(hourRange),
   dayRange(dayRange),
   monthRange(monthRange),
   weekRange(weekRange) {}
+
+unsigned long Cron::getSecondRange()
+{
+  return secondRange;
+}
 
 unsigned long Cron::getMinuteRange()
 {
@@ -43,11 +50,12 @@ unsigned short Cron::getWeekRange()
 bool Cron::checkExecute(unsigned short second, unsigned short minute, unsigned short hour, unsigned short day, unsigned short month, unsigned short week)
 {
   unsigned long tmp = 1;
-  return (minuteRange & (tmp << minute)) > 0
-    && (hourRange & (tmp << hour)) > 0
-    && (dayRange & (tmp << day)) > 0
-    && (monthRange & (tmp << month)) > 0
-    && (weekRange & (tmp << week)) > 0;
+  return (getSecondRange() & (tmp << second)) > 0
+    && (getMinuteRange() & (tmp << minute)) > 0
+    && (getHourRange() & (tmp << hour)) > 0
+    && (getDayRange() & (tmp << day)) > 0
+    && (getMonthRange() & (tmp << month)) > 0
+    && (getWeekRange() & (tmp << week)) > 0;
 }
 
 Cron Cron::parse(std::string cron)
@@ -62,14 +70,16 @@ Cron Cron::parse(std::string cron)
     cron = match.suffix().str();
   }
   
-  if (itemList.size() != 5) throw std::invalid_argument("The Cron format is incorrect: " + cronBak);
-
+  if (itemList.size() != 5 && itemList.size() != 6) throw std::invalid_argument("The Cron format is incorrect: " + cronBak);
+  // 如果输入的是分钟级别的Cron，秒默认是 0
+  if (itemList.size() == 5) itemList.insert(itemList.begin(), "0");
   return Cron(
     parseItem(itemList[0], 0, 59),
-    parseItem(itemList[1], 0, 23),
-    parseItem(itemList[2], 1, 31),
-    parseItem(itemList[3], 1, 12),
-    parseItem(itemList[4], 0, 6)
+    parseItem(itemList[1], 0, 59),
+    parseItem(itemList[2], 0, 23),
+    parseItem(itemList[3], 1, 31),
+    parseItem(itemList[4], 1, 12),
+    parseItem(itemList[5], 0, 6)
   );
 }
 

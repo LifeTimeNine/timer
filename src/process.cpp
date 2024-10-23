@@ -2,19 +2,22 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sstream>
+#include "util.hpp"
 
 Process::Data::Data(): pid(-1) {}
 
 Process::Process(const std::string &path, const std::string &args,
           size_t bufferSize):
           bufferSize(bufferSize), stdoutContent(), stderrContent(), data() {
-  std::istringstream iss(args);
-  std::vector<char*> argv;
-  std::string arg;
-  while(iss >> arg) argv.push_back(arg.data());
-  open([this, &path, &argv]() {
-    auto res = execv(path.data(), argv.data());
-    std::cout << "exec: " << res << std::endl;
+  open([this, &path, &args]() {
+    std::vector<std::string> argList = util::stringSplit(args);
+    std::vector<const char*> argv = {path.c_str()};
+    for (size_t i = 0; i < argList.size(); i++)
+    {
+      argv.push_back(argList[i].c_str());
+    }
+    argv.push_back(nullptr);
+    execv(path.data(), const_cast<char *const *>(argv.data()));
   });
   asyncRead();
 }

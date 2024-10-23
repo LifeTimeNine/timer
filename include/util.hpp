@@ -11,7 +11,7 @@ namespace util
    * @param str       字符串
    * @param delimiter 分割符
    */
-  std::vector<std::string> stringSplit(std::string str, char delimiter);
+  std::vector<std::string> stringSplit(std::string str, char delimiter = ' ');
 
   /**
    * 获取时间戳

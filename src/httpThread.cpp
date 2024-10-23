@@ -2,10 +2,8 @@
 #include "message.hpp"
 #include "log.hpp"
 #include "util.hpp"
-#include "nlohmann/json.hpp"
 #include <vector>
 #include <thread>
-
 
 HttpThread::HttpThread(Config* config, TaskTable* taskTable):
 config(config),
@@ -13,7 +11,7 @@ taskTable(taskTable),
 server()
 {
   server.Get("/", [this](const httplib::Request& request, httplib::Response& response) {
-    response.set_content("Timer", "text/plain");
+    this->response<int>(response, Status::Normal, nullptr);
   });
   task();
   running();
@@ -60,11 +58,9 @@ void HttpThread::task()
         task.loop = taskInfo.loop;
         task.enable = taskInfo.enable;
         task.cron = taskInfo.cron;
-        nlohmann::json json = task;
-        response.set_content(json.dump(), "application/json");
+        this->response(response, Status::Normal, &task);
       } else {
-        response.status = httplib::StatusCode::NotFound_404;
-        response.set_content("Task does not exist", "text/plain");
+        this->response<int>(response, Status::TaskNotExit, nullptr, "Task not exits!");
       }
     } else {
       std::vector<message::Task> result;
@@ -79,8 +75,7 @@ void HttpThread::task()
         task.cron = item.cron;
         result.push_back(task);
       }
-      nlohmann::json json = result;
-      response.set_content(json.dump(), "application/json");
+      this->response(response, Status::Normal, &result);
     }
   });
 
@@ -94,8 +89,7 @@ void HttpThread::task()
     catch(const std::exception& e)
     {
       Log::warn("<{}> post task  json parse fail: {}", "http_server", request.body);
-      response.status = httplib::StatusCode::NotImplemented_501;
-      response.set_content("fail", "text/plain");
+      this->response<int>(response, Status::ParamsParseFail, nullptr, "Parameter parsing failed!");
       return;
     }
     // 保存信息
@@ -107,7 +101,7 @@ void HttpThread::task()
     saveTask.enable = task.enable;
     saveTask.cron = task.cron;
     taskTable->set(saveTask);
-    response.set_content("success", "text/plain");
+    this->response<int>(response, Status::Normal, nullptr);
   });
 
   server.Delete("/task", [this](const httplib::Request& request, httplib::Response& response) {
@@ -121,19 +115,19 @@ void HttpThread::task()
     catch(const std::exception& e)
     {
       Log::warn("<{}> delete task  json parse fail: {}", "http_server", request.body);
-      response.set_content("fail", "text/plain");
+      this->response<int>(response, Status::ParamsParseFail, nullptr, "Parameter parsing failed!");
       return;
     }
 
     // 获取任务信息
     if (!taskTable->exist(taskOperation.uuid)) {
       response.status = httplib::StatusCode::NotFound_404;
-      response.set_content("Task does not exist", "text/plain");
+      this->response<int>(response, Status::TaskNotExit, nullptr, "Task not exits!");
       return;
     }
     // 从任务表删除
     taskTable->remove(taskOperation.uuid);
-    response.set_content("success", "text/plain");
+    this->response<int>(response, Status::Normal, nullptr);
   });
 }
 
@@ -149,18 +143,25 @@ void HttpThread::running()
     catch(const std::exception& e)
     {
       Log::warn("<{}> delete task  json parse fail: {}", "http_server", request.body);
-      response.set_content("fail", "text/plain");
+      this->response<int>(response, Status::ParamsParseFail, nullptr, "Parameter parsing failed!");
       return;
     }
     // 获取任务信息
     if (!taskTable->exist(taskOperation.uuid)) {
-      response.status = httplib::StatusCode::NotFound_404;
-      response.set_content("Task does not exist", "text/plain");
+      this->response<int>(response, Status::TaskNotExit, nullptr, "Task not exits!");
       return;
     }
     Task task = taskTable->get(taskOperation.uuid);
     // 运行任务
     Task::run(task, config);
-    response.set_content("success", "text/plain");
+    this->response<int>(response, Status::Normal, nullptr);
   });
+}
+
+template <typename T>
+void HttpThread::response(httplib::Response& response, Status status, T* data, std::string message)
+{
+  struct Response<T> res = {status, data, message};
+  nlohmann::json json = res;
+  response.set_content(json.dump(), "application/json");
 }

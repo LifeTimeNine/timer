@@ -31,6 +31,12 @@ int main(int argc, char *argv[])
   // 初始化日志模块
   Log::initiate(config->getLogDir(), config->getLogLevel());
 
+  Cron cron = Cron::parse("* * * * *");
+
+  cron.getNextRunTime(std::chrono::system_clock::now());
+
+  return EXIT_SUCCESS;
+
   try
   {
     taskTable = new TaskTable(config->getDbPath());

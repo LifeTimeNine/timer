@@ -135,7 +135,6 @@ std::chrono::_V2::system_clock::time_point Cron::getNextRunTime(std::chrono::_V2
   std::chrono::seconds second(1);
   currentTime += second;
   calculateNextRunMonth(currentTime);
-  std::cout << "time: " << currentTime.count() << std::endl;
   std::time_t t = currentTime.count();
   std::tm* timeInfo = std::localtime(&t);
   std::ostringstream oss;
@@ -144,26 +143,19 @@ std::chrono::_V2::system_clock::time_point Cron::getNextRunTime(std::chrono::_V2
   return time;
 }
 
-void Cron::calculateNextRunMonth(std::chrono::seconds &time, bool satisfied)
+void Cron::calculateNextRunMonth(std::chrono::seconds &time)
 {
-  Log::debug("month--------------");
   tm* tm = getTime(&time);
   unsigned short current = tm->tm_mon + 1;
+  Log::debug("month {}-{}-{} {}:{}:{}", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
   unsigned short result = getMonth() & (monthRange << current);
   if (result == 0) {
     // 时间调整到下一年第一个月第一天的0点0分0秒
-    date::years incYear(1);
-    date::months decMonth(current - 1);
-    date::days decDay(tm->tm_mday - 1);
-    std::chrono::hours decHour(tm->tm_hour);
-    std::chrono::minutes decMinute(tm->tm_min);
-    std::chrono::seconds decSecond(tm->tm_sec);
-    time = time + incYear - decMonth - decDay - decMinute - decSecond;
-    if (week == weekRange) {
-      calculateNextRunDay(time, false);
-    } else {
-      calculateNextRunWeek(time, false);
-    }
+    date::year_month_day nextYearDate{date::year{tm->tm_year + 1900} + date::years{1}, date::month{1}, date::day{1}};
+    date::sys_days ymd = nextYearDate;
+    auto nextYearFirstSecond = ymd - std::chrono::hours{8};
+    time = std::chrono::time_point_cast<std::chrono::seconds>(nextYearFirstSecond).time_since_epoch();
+    calculateNextRunMonth(time);
   } else {
     // 计算下一次满足条件的月份
     unsigned short next = 0;
@@ -175,202 +167,169 @@ void Cron::calculateNextRunMonth(std::chrono::seconds &time, bool satisfied)
         break;
       }
     }
-    satisfied = next == current;
-    if (!satisfied) {
-      date::months incMonth(next - current - 1);
+    if (next != current) {
+      date::months incMonth(next - current);
       time += incMonth;
     }
     if (week == weekRange) {
-      calculateNextRunDay(time, satisfied);
+      calculateNextRunDay(time);
     } else {
-      calculateNextRunWeek(time, satisfied);
+      calculateNextRunWeek(time);
     }
   }
 }
 
-void Cron::calculateNextRunDay(std::chrono::seconds &time, bool satisfied)
+void Cron::calculateNextRunDay(std::chrono::seconds &time)
 {
-  Log::debug("day--------------");
   tm* tm = getTime(&time);
   unsigned short current = tm->tm_mday;
-  unsigned int result = 0;
-  if (satisfied) {
-    result = getDay() & (dayRange << current);
-    if (result == 0) {
-      // 时间调整到下一个月第一天的0点0分0秒
-      date::months incMonth(1);
-      date::days decDay(tm->tm_mday - 1);
-      std::chrono::hours decHour(tm->tm_hour);
-      std::chrono::minutes decMinute(tm->tm_min);
-      std::chrono::seconds decSecond(tm->tm_sec);
-      time = time + incMonth - decDay - decHour - decMinute - decSecond;
-      calculateNextRunMonth(time, false) ;
-      return;
-    }
+  Log::debug("day {}-{}-{} {}:{}:{}", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+  unsigned int result = getDay() & (dayRange << current);
+  if (result == 0) {
+    // 时间调整到下一个月第一天的0点0分0秒
+    date::year_month_day nextMonthDate = {date::year{tm->tm_year + 1900}, date::month{static_cast<unsigned int>(tm->tm_mon + 1)} + date::months{1}, date::day{1}};
+    date::sys_days ymd = nextMonthDate;
+    auto nextYearFirstSecond = ymd - std::chrono::hours{8};
+    time = std::chrono::time_point_cast<std::chrono::seconds>(nextYearFirstSecond).time_since_epoch();
+    calculateNextRunMonth(time) ;
   } else {
-    result = dayRange;
-  }
-  // 计算下一次满足条件的天
-  unsigned short next = 0;
-  unsigned int tmp = 1;
-  for (size_t i = 1; i <= 31; i++)
-  {
-    if ((result & (tmp << i)) != 0) {
-      next = i;
-      break;
+    // 计算下一次满足条件的天
+    unsigned short next = 0;
+    unsigned int tmp = 1;
+    for (size_t i = 1; i <= 31; i++)
+    {
+      if ((result & (tmp << i)) != 0) {
+        next = i;
+        break;
+      }
     }
+    if (next != current) {
+      date::days incDay(next - current);
+      time += incDay;
+    }
+    calculateNextRunHour(time);
   }
-  satisfied = next == current;
-  if (!satisfied) {
-    date::days incDay(next - current - 1);
-    time += incDay;
-  }
-  calculateNextRunHour(time, satisfied);
 }
 
-void Cron::calculateNextRunHour(std::chrono::seconds &time, bool satisfied)
+void Cron::calculateNextRunHour(std::chrono::seconds &time)
 {
-  Log::debug("hour--------------");
   tm* tm = getTime(&time);
   unsigned short current = tm->tm_hour;
-  unsigned int result = 0;
-  if (satisfied) {
-    result = getHour() & (hourRange << current);
-    if (result == 0) {
-      // 时间调整到明天的0点0分0秒
-      date::days incDay(1);
-      std::chrono::hours decHour(tm->tm_hour);
-      std::chrono::minutes decMinute(tm->tm_min);
-      std::chrono::seconds decSecond(tm->tm_sec);
-      time = time + incDay - decHour - decMinute - decSecond;
-      calculateNextRunDay(time, false);
-      return;
-    }
+  Log::debug("hour {}-{}-{} {}:{}:{}", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+  unsigned int result = getHour() & (hourRange << current);
+  if (result == 0) {
+    // 时间调整到明天的0点0分0秒
+    date::year_month_day tomorrow = {date::year{tm->tm_year + 1900}, date::month{static_cast<unsigned int>(tm->tm_mon)}, date::day{static_cast<unsigned int>(tm->tm_mday)} + date::days{1}};
+    date::sys_days ymd = tomorrow;
+    auto nextYearFirstSecond = ymd - std::chrono::hours{8};
+    time = std::chrono::time_point_cast<std::chrono::seconds>(nextYearFirstSecond).time_since_epoch();
+    calculateNextRunDay(time);
   } else {
-    result = hourRange;
-  }
-  // 计算下一次满足条件的小时
-  unsigned short next = 0;
-  unsigned int tmp = 1;
-  for (size_t i = 0; i <= 23; i++)
-  {
-    if ((result & (tmp << i)) != 0) {
-      next = i;
-      break;
+    // 计算下一次满足条件的小时
+    unsigned short next = 0;
+    unsigned int tmp = 1;
+    for (size_t i = 0; i <= 23; i++)
+    {
+      if ((result & (tmp << i)) != 0) {
+        next = i;
+        break;
+      }
     }
+    if (next != current) {
+      std::chrono::hours incHour(next - current);
+      time += incHour;
+    }
+    calculateNextRunMinute(time);
   }
-  satisfied = next == current;
-  if (!satisfied) {
-    std::chrono::hours incHour(next - current - 1);
-    time += incHour;
-  }
-  calculateNextRunMinute(time, satisfied);
 }
 
-void Cron::calculateNextRunMinute(std::chrono::seconds &time, bool satisfied)
+void Cron::calculateNextRunMinute(std::chrono::seconds &time)
 {
   tm* tm = getTime(&time);
   unsigned short current = tm->tm_min;
-  Log::debug("minute {} {}--------------", current, satisfied);
-  unsigned long result = 0;
-  if (satisfied) {
-    result = getMinute() & (minuteRange << current);
-    if (result == 0) {
-      // 时间调整到下一小时的0分0秒
-      std::chrono::hours incHour(1);
-      std::chrono::minutes decMinute(tm->tm_min);
-      std::chrono::seconds decSecond(tm->tm_sec);
-      time = time + incHour - decMinute - decSecond;
-      calculateNextRunHour(time, false);
-      return;
-    }
+  Log::debug("minute {}-{}-{} {}:{}:{}", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+  unsigned long result = getMinute() & (minuteRange << current);
+  if (result == 0) {
+    // 时间调整到下一小时的0分0秒
+    std::chrono::hours incHour(1);
+    std::chrono::minutes decMinute(tm->tm_min);
+    std::chrono::seconds decSecond(tm->tm_sec);
+    time = time + incHour - decMinute - decSecond;
+    calculateNextRunHour(time);
   } else {
-    result = minuteRange;
-  }
-  // 计算下一次满足条件的分钟
-  unsigned short next = 0;
-  unsigned long tmp = 1;
-  for (size_t i = 0; i <= 59; i++)
-  {
-    if ((result & (tmp << i)) != 0) {
-      next = i;
-      break;
+    // 计算下一次满足条件的分钟
+    unsigned short next = 0;
+    unsigned long tmp = 1;
+    for (size_t i = 0; i <= 59; i++)
+    {
+      if ((result & (tmp << i)) != 0) {
+        next = i;
+        break;
+      }
     }
+    if (next != current) {
+      std::chrono::minutes incMinute(next - current);
+      time += incMinute;
+    }
+    calculateNextRunSecond(time);
   }
-  satisfied = next == current;
-  if (!satisfied) {
-    std::chrono::hours incHour(next - current - 1);
-    time += incHour;
-  }
-  calculateNextRunSecond(time, satisfied);
 }
 
-void Cron::calculateNextRunSecond(std::chrono::seconds &time, bool satisfied)
+void Cron::calculateNextRunSecond(std::chrono::seconds &time)
 {
   tm* tm = getTime(&time);
   unsigned short current = tm->tm_sec;
-  Log::debug("second {} {}--------------", current, satisfied);
-  unsigned long result = 0;
-  if (satisfied) {
-    result = getSecond() & (secondRange << current);
-    if (result == 0) {
-      // 时间调整到下一分种的0秒
-      std::chrono::minutes incMinute(1);
-      std::chrono::seconds decSecond(tm->tm_sec);
-      time = time + incMinute - decSecond;
-      calculateNextRunMinute(time, false);
-      return;
-    }
+  Log::debug("second {}-{}-{} {}:{}:{}", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min, tm->tm_sec);
+  unsigned long result = getSecond() & (secondRange << current);
+  if (result == 0) {
+    // 时间调整到下一分种的0秒
+    std::chrono::minutes incMinute(1);
+    std::chrono::seconds decSecond(tm->tm_sec);
+    time = time + incMinute - decSecond;
+    calculateNextRunMinute(time);
   } else {
-    result = secondRange;
-  }
-  // 计算下一次满足条件的秒
-  unsigned short next = 0;
-  unsigned long tmp = 1;
-  for (size_t i = 0; i <= 59; i++)
-  {
-    if ((result & (tmp << i)) != 0) {
-      next = i;
-      break;
+    // 计算下一次满足条件的秒
+    unsigned short next = 0;
+    unsigned long tmp = 1;
+    for (size_t i = 0; i <= 59; i++)
+    {
+      if ((result & (tmp << i)) != 0) {
+        next = i;
+        break;
+      }
     }
-  }
-  satisfied = next == current;
-  if (!satisfied) {
-    std::chrono::seconds incSecond(next - current - 1);
-    time += incSecond;
+    if (next != current) {
+      std::chrono::seconds incSecond(next - current);
+      time += incSecond;
+    }
   }
 }
 
-void Cron::calculateNextRunWeek(std::chrono::seconds &time, bool satisfied)
+void Cron::calculateNextRunWeek(std::chrono::seconds &time)
 {
-  Log::debug("week--------------");
+  Log::debug("week");
   tm* tm = getTime(&time);
   unsigned short current = tm->tm_wday;
-  unsigned long result = 0;
-  if (satisfied) {
-    result = getWeek() & (weekRange << current);
-    if (result == 0) {
-      result = weekRange;
-    }
-  } else {
+  unsigned long result = getWeek() & (weekRange << current);
+  if (result == 0) {
     result = weekRange;
-  }
-  // 计算下一次满足条件的周
-  unsigned short next = 0;
-  unsigned short tmp = 1;
-  for (size_t i = 0; i <= 59; i++)
-  {
-    if ((result & (tmp << i)) != 0) {
-      next = i;
-      break;
+  } else {
+    // 计算下一次满足条件的周
+    unsigned short next = 0;
+    unsigned short tmp = 1;
+    for (size_t i = 0; i <= 59; i++)
+    {
+      if ((result & (tmp << i)) != 0) {
+        next = i;
+        break;
+      }
     }
+    if (next != current) {
+      date::days incDay(next - current);
+      time += incDay;
+    }
+    calculateNextRunHour(time);
   }
-  satisfied = next == current;
-  if (!satisfied) {
-    date::days incDay(next - current - 1);
-    time += incDay;
-  }
-  calculateNextRunHour(time, satisfied);
 }
 
 tm* Cron::getTime(const std::chrono::seconds* time)

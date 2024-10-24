@@ -92,37 +92,37 @@ private:
    * @param time      当前时间
    * @param satisfied 当前时间是否满足
    */
-  void calculateNextRunMonth(std::chrono::seconds &time, bool satisfied = true);
+  void calculateNextRunMonth(std::chrono::seconds &time);
   /**
    * 计算下一次运行的天
    * @param time      当前时间
    * @param satisfied 当前时间是否满足
    */
-  void calculateNextRunDay(std::chrono::seconds &time, bool satisfied = true);
+  void calculateNextRunDay(std::chrono::seconds &time);
   /**
    * 计算下一次运行的小时
    * @param time      当前时间
    * @param satisfied 当前时间是否满足
    */
-  void calculateNextRunHour(std::chrono::seconds &time, bool satisfied = true);
+  void calculateNextRunHour(std::chrono::seconds &time);
   /**
    * 计算下一次运行的分钟
    * @param time      当前时间
    * @param satisfied 当前时间是否满足
    */
-  void calculateNextRunMinute(std::chrono::seconds &time, bool satisfied = true);
+  void calculateNextRunMinute(std::chrono::seconds &time);
   /**
    * 计算下一次运行的秒
    * @param time      当前时间
    * @param satisfied 当前时间是否满足
    */
-  void calculateNextRunSecond(std::chrono::seconds &time, bool satisfied = true);
+  void calculateNextRunSecond(std::chrono::seconds &time);
   /**
    * 计算下一次运行的周
    * @param time      当前时间
    * @param satisfied 当前时间是否满足
    */
-  void calculateNextRunWeek(std::chrono::seconds &time, bool satisfied = true);
+  void calculateNextRunWeek(std::chrono::seconds &time);
 
   /**
    * 获取时间结构体

@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
   // 初始化日志模块
   Log::initiate(config->getLogDir(), config->getLogLevel());
 
-  Cron cron = Cron::parse("* * * * *");
+  Cron cron = Cron::parse("1 1 1 3 10 *");
 
   cron.getNextRunTime(std::chrono::system_clock::now());
 

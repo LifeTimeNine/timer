@@ -18,12 +18,12 @@ namespace notify
    * @param url   通知地址
    * @param uuid  任务ID
    */
-  bool taskStart(const std::string url, const std::string uuid);
+  bool taskStart(const std::string url, const message::RunBeforeNotify* runBeforeNotify);
 
   /**
    * 任务结束
    * @param url     通知地址
    * @param result  运行结果
    */
-  bool taskFinish(const std::string url, const message::Result* result);
+  bool taskFinish(const std::string url, const message::RunResult* result);
 }

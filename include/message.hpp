@@ -70,9 +70,30 @@ namespace message
   };
 
   /**
-   * 结果
+   * 运行前通知
    */
-  class Result
+  class RunBeforeNotify
+  {
+    public:
+      /* 任务UUID */
+      std::string uuid;
+      /** 开始时间 */
+      std::string startTime;
+      /** 下一次运行时间 */
+      std::string nextRunTime;
+
+    friend void to_json(nlohmann::json& json, const RunBeforeNotify& runBeforeNotify)
+    {
+      json["uuid"] = runBeforeNotify.uuid;
+      json["start_time"] = runBeforeNotify.startTime;
+      json["next_run_time"] = runBeforeNotify.nextRunTime;
+    }
+  };
+
+  /**
+   * 运行结果
+   */
+  class RunResult
   {
     public:
       /* 任务UUID */
@@ -90,15 +111,50 @@ namespace message
       /** 异常输出 */
       std::string err;
     
-    friend void to_json(nlohmann::json& json, const Result& result)
+    friend void to_json(nlohmann::json& json, const RunResult& runResult)
     {
-      json["uuid"] = result.uuid;
-      json["start_time"] = result.startTime;
-      json["end_time"] = result.endTime;
-      json["runtime"] = result.runtime;
-      json["is_normal_exit"] = result.isNormalExit;
-      json["out"] = result.out;
-      json["err"] = result.err;
+      json["uuid"] = runResult.uuid;
+      json["start_time"] = runResult.startTime;
+      json["end_time"] = runResult.endTime;
+      json["runtime"] = runResult.runtime;
+      json["is_normal_exit"] = runResult.isNormalExit;
+      json["out"] = runResult.out;
+      json["err"] = runResult.err;
     }
+  };
+
+  /**
+   * Http响应状态码
+   */
+  enum ResponseStatus
+  {
+    /** 正常 */
+    Normal,
+    /** 任务不存在 */
+    TaskNotExit = 1001,
+    /** 参数解析失败 */
+    ParamsParseFail = 1002
+  };
+
+  /**
+   * Http响应
+   */
+  template <typename T>
+  struct Response
+  {
+    ResponseStatus status;
+    T* data;
+    std::string message;
+
+    friend void to_json(nlohmann::json &json, struct Response response)
+    {
+      json["status"] = static_cast<unsigned int>(response.status);
+      if (response.data == nullptr) {
+        json["data"] = nullptr;
+      } else {
+        json["data"] = *(response.data);
+      }
+      json["message"] = response.message;
+    };
   };
 }

@@ -5,41 +5,7 @@
 #include "taskTable.hpp"
 #include "httplib.h"
 #include "nlohmann/json.hpp"
-
-/**
- * Http响应状态码
- */
-enum Status
-{
-  /** 正常 */
-  Normal,
-  /** 任务不存在 */
-  TaskNotExit = 1001,
-  /** 参数解析失败 */
-  ParamsParseFail = 1002
-};
-
-/**
- * Http响应
- */
-template <typename T>
-struct Response
-{
-  Status status;
-  T* data;
-  std::string message;
-
-  friend void to_json(nlohmann::json &json, struct Response response)
-  {
-    json["status"] = static_cast<unsigned int>(response.status);
-    if (response.data == nullptr) {
-      json["data"] = nullptr;
-    } else {
-      json["data"] = *(response.data);
-    }
-    json["message"] = response.message;
-  };
-};
+#include "message.hpp"
 
 /**
  * HTTP服务
@@ -89,5 +55,5 @@ class HttpThread
      * @param message   消息
      */
     template <typename T>
-    void response(httplib::Response& response, Status status, T* data, std::string message = "success");
+    void response(httplib::Response& response, message::ResponseStatus status, T* data, std::string message = "success");
 };

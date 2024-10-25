@@ -15,25 +15,34 @@ namespace notify
     );
   }
 
-  bool taskStart(const std::string url, const std::string uuid)
+  bool taskStart(const std::string url, const message::RunBeforeNotify* runBeforeNotify)
   {
     if (url.empty()) return true;
-    Log::info("<{}> task_start [uuid: {}]", "notify", uuid);
-    message::TaskOperation taskOperation;
-    taskOperation.uuid = uuid;
+    Log::info("<{}> task_start [uuid:{},start_time:{},next_run_time:{}]",
+      "notify",
+      runBeforeNotify->uuid,
+      runBeforeNotify->startTime,
+      runBeforeNotify->nextRunTime);
     nlohmann::json json;
     json["event"] = message::NotifyEvent::TaskStart;
-    json["data"] = taskOperation;
+    json["data"] = *runBeforeNotify;
     httplib::Result result = request(url, json);
     return result.error() == httplib::Error::Success && result.value().status == 200;
   }
 
-  bool taskFinish(const std::string url, const message::Result* result)
+  bool taskFinish(const std::string url, const message::RunResult* runResult)
   {
     nlohmann::json json;
     json["event"] = message::NotifyEvent::TaskFinish;
-    json["data"] = *result;
-    Log::info("<{}> task_finish [{}]", "notify", json["data"].dump());
+    json["data"] = *runResult;
+    Log::info("<{}> task_finish [uuid:{},start_time:{},runtime:{},is_normal_exit:{},out:{},err:{}]",
+      "notify",
+      runResult->uuid,
+      runResult->startTime,
+      runResult->runtime,
+      runResult->isNormalExit,
+      runResult->out,
+      runResult->err);
     httplib::Result res = request(url, json);
     return res.error() == httplib::Error::Success && res.value().status == 200;
   }

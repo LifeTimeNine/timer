@@ -7,6 +7,10 @@
 #include "taskTable.hpp"
 #include "httpThread.hpp"
 
+#include "date/date.h"
+#include "util.hpp"
+#include "date/tz.h"
+
 Config* config = nullptr;
 TaskTable* taskTable = nullptr;
 HttpThread* httpThread = nullptr;
@@ -30,12 +34,6 @@ int main(int argc, char *argv[])
 
   // 初始化日志模块
   Log::initiate(config->getLogDir(), config->getLogLevel());
-
-  Cron cron = Cron::parse("1 1 1 3 10 *");
-
-  cron.getNextRunTime(std::chrono::system_clock::now());
-
-  return EXIT_SUCCESS;
 
   try
   {
@@ -61,7 +59,7 @@ int main(int argc, char *argv[])
     for(Task task : taskTable->list()) {
       // 如果不是循环执行，或者未启用
       if (!task.loop || !task.enable) continue;
-      if (task.cronRange.checkExecute(time->tm_sec, time->tm_min, time->tm_hour, time->tm_mday, time->tm_mon + 1, time->tm_wday)) {
+      if (task.cronRange.checkRunTime(time->tm_sec, time->tm_min, time->tm_hour, time->tm_mday, time->tm_mon + 1, time->tm_wday)) {
         // 运行任务
         Task::run(task, config);
       }

@@ -20,7 +20,6 @@ class Task
     bool loop;
     bool enable;
     std::string cron;
-
     Cron cronRange;
 
     Task(): cronRange() {}
@@ -30,7 +29,7 @@ class Task
      * @param task    任务类
      * @param config  配置类
      */
-    static void run(const Task task, Config* config);
+    static void run(Task task, Config* config);
 };
 
 /**

@@ -11,25 +11,31 @@
 #include "util.hpp"
 #include "notify.hpp"
 
-void Task::run(const Task task, Config* config)
+void Task::run(Task task, Config* config)
 {
   std::thread t([task, config]() {
     Log::info("task run [uuid: {}]", task.uuid);
     // 记录开始时间
     auto startTime = std::chrono::system_clock::now();
-    message::Result result;
+    auto startTimePoint = date::floor<std::chrono::seconds>(startTime);
+    message::RunResult result;
     result.uuid = task.uuid;
-    result.startTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", startTime);
+    result.startTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", startTimePoint);
     // 通知任务开始运行
-    std::thread taskStartNotifyThread([&task, config]() {
-      notify::taskStart(config->getNotifyUrl(), task.uuid);
+    std::thread taskStartNotifyThread([&task, &startTimePoint, config]() {
+      message::RunBeforeNotify runBeforeNotify;
+      runBeforeNotify.uuid = task.uuid;
+      runBeforeNotify.startTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", startTimePoint);
+      Cron cron = task.cronRange;
+      runBeforeNotify.nextRunTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", cron.getNextRunTime(startTimePoint));
+      notify::taskStart(config->getNotifyUrl(), &runBeforeNotify);
     });
     taskStartNotifyThread.detach();
 
     Process process(task.execFile, task.args);
     result.isNormalExit = process.getExitStatus() == 0;
     auto endTime = std::chrono::system_clock::now();
-    result.endTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", endTime);
+    result.endTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", date::floor<std::chrono::seconds>(endTime));
     std::stringstream str;
     str << std::setprecision(3) << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count()) / 1000;
     result.runtime = str.str();

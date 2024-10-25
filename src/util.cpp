@@ -35,7 +35,7 @@ namespace util
     return std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now()).time_since_epoch().count();
   }
 
-  std::string getFormatTime(std::string format, std::chrono::_V2::system_clock::time_point timePoint)
+  std::string getFormatTime(std::string format, date::sys_seconds timePoint)
   {
     std::time_t time = std::chrono::system_clock::to_time_t(timePoint);
     tm* localTm = std::localtime(&time);
@@ -47,7 +47,6 @@ namespace util
 
   std::string getFormatTime(std::string format)
   {
-    std::chrono::_V2::system_clock::time_point now = std::chrono::system_clock::now();
-    return getFormatTime(format, now);
+    return getFormatTime(format, std::chrono::time_point_cast<std::chrono::seconds>(std::chrono::system_clock::now()));
   }
 }

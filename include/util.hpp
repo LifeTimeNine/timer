@@ -3,6 +3,7 @@
 #include <chrono>
 #include <iostream>
 #include <vector>
+#include "date/date.h"
 
 namespace util
 {
@@ -28,7 +29,7 @@ namespace util
    * @param format      要格式化的格式
    * @param timePoint   指定时间点
    */
-  std::string getFormatTime(std::string format, std::chrono::_V2::system_clock::time_point timePoint);
+  std::string getFormatTime(std::string format, date::sys_seconds timePoint);
 
   /**
    * 获取格式化的日期

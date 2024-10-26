@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <mutex>
 #include "date/date.h"
 
 /**
@@ -10,6 +11,8 @@
 class Cron
 {
 private:
+  static std::mutex timeMutex;
+
   unsigned long secondRange;
   unsigned long minuteRange;
   unsigned int hourRange;
@@ -124,10 +127,4 @@ private:
    * @param satisfied 当前时间是否满足
    */
   void calculateNextRunWeek(date::sys_seconds &time);
-
-  /**
-   * 获取时间结构体
-   * @param time
-   */
-  tm* getMTime(const date::sys_seconds* time);
 };

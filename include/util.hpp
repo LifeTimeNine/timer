@@ -29,11 +29,35 @@ namespace util
    * @param format      要格式化的格式
    * @param timePoint   指定时间点
    */
-  std::string getFormatTime(std::string format, date::sys_seconds timePoint);
+  std::string getFormatTime(std::string format, date::sys_seconds* timePoint);
 
   /**
    * 获取格式化的日期
    * @param format  要格式化的格式
    */
   std::string getFormatTime(std::string format);
+
+  /**
+   * 获取本地时间
+   */
+  tm getLocaltime();
+
+  /**
+   * 获取本地时间
+   * @param timePoint   指定时间点
+   */
+  tm getLocaltime(date::sys_seconds* timePoint);
+
+  /**
+   * 读取文件所有内容
+   * @param filename  文件地址
+   */
+  std::string fileGetContents(std::string filename);
+
+  /**
+   * 向指定文件写入内容
+   * @param filename  文件地址
+   * @param data      数据
+   */
+  bool filePutContents(std::string filename, std::string data);
 }

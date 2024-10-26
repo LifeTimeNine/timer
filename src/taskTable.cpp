@@ -14,20 +14,21 @@
 void Task::run(Task task, Config* config)
 {
   std::thread t([task, config]() {
-    Log::info("task run [uuid: {}]", task.uuid);
+    if (config->getNotifyUrl().empty()) Log::info("task run [uuid: {}]", task.uuid);
     // 记录开始时间
     auto startTime = std::chrono::system_clock::now();
     auto startTimePoint = date::floor<std::chrono::seconds>(startTime);
     message::RunResult result;
     result.uuid = task.uuid;
-    result.startTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", startTimePoint);
+    result.startTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", &startTimePoint);
     // 通知任务开始运行
-    std::thread taskStartNotifyThread([&task, &startTimePoint, config]() {
+    std::thread taskStartNotifyThread([&task, &startTimePoint, &result, config]() {
       message::RunBeforeNotify runBeforeNotify;
       runBeforeNotify.uuid = task.uuid;
-      runBeforeNotify.startTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", startTimePoint);
+      runBeforeNotify.startTime = result.startTime;
       Cron cron = task.cronRange;
-      runBeforeNotify.nextRunTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", cron.getNextRunTime(startTimePoint));
+      date::sys_seconds nextRunTime = cron.getNextRunTime(startTimePoint);
+      runBeforeNotify.nextRunTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", &nextRunTime);
       notify::taskStart(config->getNotifyUrl(), &runBeforeNotify);
     });
     taskStartNotifyThread.detach();
@@ -35,7 +36,8 @@ void Task::run(Task task, Config* config)
     Process process(task.execFile, task.args);
     result.isNormalExit = process.getExitStatus() == 0;
     auto endTime = std::chrono::system_clock::now();
-    result.endTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", date::floor<std::chrono::seconds>(endTime));
+    auto endTimePoint = date::floor<std::chrono::seconds>(endTime);
+    result.endTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", &endTimePoint);
     std::stringstream str;
     str << std::setprecision(3) << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count()) / 1000;
     result.runtime = str.str();
@@ -68,6 +70,9 @@ TaskTable::TaskTable(std::string dbPath): dbPath(dbPath), db(nullptr), table(), 
     throw std::runtime_error("db open fail[" + std::string(sqlite3_errmsg(db)) + "]");
     return;
   }
+  // 连接密码
+  std::string password = "timer_1411";
+  // if ()
   Log::info("<{}> db path: {}", "task_table", dbPath);
   char* errmsg;
   int result;

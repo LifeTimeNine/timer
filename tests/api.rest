@@ -6,12 +6,12 @@ POST http://127.0.0.1:10010/task
 Content-Type: application/json
 
 {
-  "uuid": "task1",
+  "uuid": "task10",
   "exec_file": "/bin/sh",
   "args": "-c /timer/test.sh",
   "loop": true,
   "enable": true,
-  "cron": "* * * * *"
+  "cron": "*/10 * * * *"
 }
 
 ### 获取任务列表
@@ -35,5 +35,5 @@ POST http://127.0.0.1:10010/run
 Content-Type: application/json
 
 {
-  "uuid": "task1"
+  "uuid": "task01"
 }

@@ -32,6 +32,7 @@ namespace notify
 
   bool taskFinish(const std::string url, const message::RunResult* runResult)
   {
+    if (url.empty()) return true;
     nlohmann::json json;
     json["event"] = message::NotifyEvent::TaskFinish;
     json["data"] = *runResult;

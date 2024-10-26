@@ -7,6 +7,8 @@
 #include "util.hpp"
 #include "log.hpp"
 
+std::mutex Cron::timeMutex = std::mutex{};
+
 Cron::Cron(
     unsigned long second,
     unsigned long minute,
@@ -137,15 +139,15 @@ date::sys_seconds Cron::getNextRunTime(date::sys_seconds time)
 
 void Cron::calculateNextRunMonth(date::sys_seconds &time)
 {
-  tm* tm = getMTime(&time);
-  unsigned short current = tm->tm_mon + 1;
+  tm tm = util::getLocaltime(&time);
+  unsigned short current = tm.tm_mon + 1;
   unsigned short result = getMonth() & (monthRange << current);
   if (result == 0) {
     // 时间调整到下一年第一个月第一天的0点0分0秒
-    date::sys_days nextYearDate = date::year_month_day{date::year{tm->tm_year + 1900} + date::years{1}, date::month{1}, date::day{1}};
+    date::sys_days nextYearDate = date::year_month_day{date::year{tm.tm_year + 1900} + date::years{1}, date::month{1}, date::day{1}};
     time = nextYearDate;
-    tm = getMTime(&time);
-    time -= std::chrono::hours{static_cast<unsigned int>(tm->tm_hour)};
+    tm = util::getLocaltime(&time);
+    time -= std::chrono::hours{static_cast<unsigned int>(tm.tm_hour)};
     calculateNextRunMonth(time);
   } else {
     // 计算下一次满足条件的月份
@@ -159,11 +161,11 @@ void Cron::calculateNextRunMonth(date::sys_seconds &time)
       }
     }
     if (next != current) {
-      date::sys_days ymd = date::year_month_day{date::year{tm->tm_year + 1900}, date::month{next}, date::day{static_cast<unsigned int>(tm->tm_mday)}};
-      int hour = tm->tm_hour;
+      date::sys_days ymd = date::year_month_day{date::year{tm.tm_year + 1900}, date::month{next}, date::day{static_cast<unsigned int>(tm.tm_mday)}};
+      int hour = tm.tm_hour;
       time = ymd;
-      tm = getMTime(&time);
-      time = time - std::chrono::hours{static_cast<unsigned int>(tm->tm_hour)} + std::chrono::hours{static_cast<unsigned int>(hour)};
+      tm = util::getLocaltime(&time);
+      time = time - std::chrono::hours{static_cast<unsigned int>(tm.tm_hour)} + std::chrono::hours{static_cast<unsigned int>(hour)};
     }
     if (week == weekRange) {
       calculateNextRunDay(time);
@@ -175,15 +177,15 @@ void Cron::calculateNextRunMonth(date::sys_seconds &time)
 
 void Cron::calculateNextRunDay(date::sys_seconds &time)
 {
-  tm* tm = getMTime(&time);
-  unsigned short current = tm->tm_mday;
+  tm tm = util::getLocaltime(&time);
+  unsigned short current = tm.tm_mday;
   unsigned int result = getDay() & (dayRange << current);
   if (result == 0) {
     // 时间调整到下一个月第一天的0点0分0秒
-    date::sys_days nextMonthDate = date::year_month_day{date::year{tm->tm_year + 1900}, date::month{static_cast<unsigned int>(tm->tm_mon + 1)} + date::months{1}, date::day{1}};
+    date::sys_days nextMonthDate = date::year_month_day{date::year{tm.tm_year + 1900}, date::month{static_cast<unsigned int>(tm.tm_mon + 1)} + date::months{1}, date::day{1}};
     time = nextMonthDate;
-    tm = getMTime(&time);
-    time -= std::chrono::hours{static_cast<unsigned int>(tm->tm_hour)};
+    tm = util::getLocaltime(&time);
+    time -= std::chrono::hours{static_cast<unsigned int>(tm.tm_hour)};
     calculateNextRunMonth(time) ;
   } else {
     // 计算下一次满足条件的天
@@ -197,11 +199,11 @@ void Cron::calculateNextRunDay(date::sys_seconds &time)
       }
     }
     if (next != current) {
-      date::sys_days ymd = date::year_month_day{date::year{tm->tm_year + 1900}, date::month{static_cast<unsigned int>(tm->tm_mon) + 1}, date::day{next}};
-      int hour = tm->tm_hour;
+      date::sys_days ymd = date::year_month_day{date::year{tm.tm_year + 1900}, date::month{static_cast<unsigned int>(tm.tm_mon) + 1}, date::day{next}};
+      int hour = tm.tm_hour;
       time = ymd;
-      tm = getMTime(&time);
-      time = time - std::chrono::hours{static_cast<unsigned int>(tm->tm_hour)} + std::chrono::hours{static_cast<unsigned int>(hour)};
+      tm = util::getLocaltime(&time);
+      time = time - std::chrono::hours{static_cast<unsigned int>(tm.tm_hour)} + std::chrono::hours{static_cast<unsigned int>(hour)};
     }
     calculateNextRunHour(time);
   }
@@ -209,15 +211,15 @@ void Cron::calculateNextRunDay(date::sys_seconds &time)
 
 void Cron::calculateNextRunHour(date::sys_seconds &time)
 {
-  tm* tm = getMTime(&time);
-  unsigned short current = tm->tm_hour;
+  tm tm = util::getLocaltime(&time);
+  unsigned short current = tm.tm_hour;
   unsigned int result = getHour() & (hourRange << current);
   if (result == 0) {
     // 时间调整到明天的0点0分0秒
-    date::sys_days tomorrow = date::year_month_day{date::year{tm->tm_year + 1900}, date::month{static_cast<unsigned int>(tm->tm_mon)}, date::day{static_cast<unsigned int>(tm->tm_mday)} + date::days{1}};
+    date::sys_days tomorrow = date::year_month_day{date::year{tm.tm_year + 1900}, date::month{static_cast<unsigned int>(tm.tm_mon)}, date::day{static_cast<unsigned int>(tm.tm_mday)} + date::days{1}};
     time = tomorrow;
-    tm = getMTime(&time);
-    time -= std::chrono::hours{static_cast<unsigned int>(tm->tm_hour)};
+    tm = util::getLocaltime(&time);
+    time -= std::chrono::hours{static_cast<unsigned int>(tm.tm_hour)};
     calculateNextRunDay(time);
   } else {
     // 计算下一次满足条件的小时
@@ -240,14 +242,14 @@ void Cron::calculateNextRunHour(date::sys_seconds &time)
 
 void Cron::calculateNextRunMinute(date::sys_seconds &time)
 {
-  tm* tm = getMTime(&time);
-  unsigned short current = tm->tm_min;
+  tm tm = util::getLocaltime(&time);
+  unsigned short current = tm.tm_min;
   unsigned long result = getMinute() & (minuteRange << current);
   if (result == 0) {
     // 时间调整到下一小时的0分0秒
     std::chrono::hours incHour(1);
-    std::chrono::minutes decMinute(tm->tm_min);
-    std::chrono::seconds decSecond(tm->tm_sec);
+    std::chrono::minutes decMinute(tm.tm_min);
+    std::chrono::seconds decSecond(tm.tm_sec);
     time = time + incHour - decMinute - decSecond;
     calculateNextRunHour(time);
   } else {
@@ -271,13 +273,13 @@ void Cron::calculateNextRunMinute(date::sys_seconds &time)
 
 void Cron::calculateNextRunSecond(date::sys_seconds &time)
 {
-  tm* tm = getMTime(&time);
-  unsigned short current = tm->tm_sec;
+  tm tm = util::getLocaltime(&time);
+  unsigned short current = tm.tm_sec;
   unsigned long result = getSecond() & (secondRange << current);
   if (result == 0) {
     // 时间调整到下一分种的0秒
     std::chrono::minutes incMinute(1);
-    std::chrono::seconds decSecond(tm->tm_sec);
+    std::chrono::seconds decSecond(tm.tm_sec);
     time = time + incMinute - decSecond;
     calculateNextRunMinute(time);
   } else {
@@ -300,13 +302,13 @@ void Cron::calculateNextRunSecond(date::sys_seconds &time)
 
 void Cron::calculateNextRunWeek(date::sys_seconds &time)
 {
-  tm* tm = getMTime(&time);
-  unsigned short current = tm->tm_wday;
+  tm tm = util::getLocaltime(&time);
+  unsigned short current = tm.tm_wday;
   unsigned long result = getWeek() & (weekRange << current);
   if (result == 0) {
-    time += date::days{7 - tm->tm_wday};
-    tm = getMTime(&time);
-    time = time - std::chrono::hours{tm->tm_hour} - std::chrono::minutes{tm->tm_min} - std::chrono::seconds{tm->tm_sec};
+    time += date::days{7 - tm.tm_wday};
+    tm = util::getLocaltime(&time);
+    time = time - std::chrono::hours{tm.tm_hour} - std::chrono::minutes{tm.tm_min} - std::chrono::seconds{tm.tm_sec};
     calculateNextRunMonth(time);
   } else {
     // 计算下一次满足条件的周
@@ -325,11 +327,4 @@ void Cron::calculateNextRunWeek(date::sys_seconds &time)
     }
     calculateNextRunHour(time);
   }
-}
-
-tm* Cron::getMTime(const date::sys_seconds* time)
-{
-  auto timePoint = std::chrono::system_clock::time_point(*time);
-  std::time_t timeT = std::chrono::system_clock::to_time_t(timePoint);
-  return std::localtime(&timeT);
 }

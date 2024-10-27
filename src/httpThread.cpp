@@ -10,7 +10,10 @@ taskTable(taskTable),
 server()
 {
   server.Get("/", [this](const httplib::Request& request, httplib::Response& response) {
-    this->response<int>(response, message::ResponseStatus::Normal, nullptr);
+    message::State state;
+    state.taskTotal = this->taskTable->size();
+    state.runningNumber = this->taskTable->runCount();
+    this->response<message::State>(response, message::ResponseStatus::Normal, &state);
   });
   task();
   running();
@@ -152,7 +155,7 @@ void HttpThread::running()
     }
     Task task = taskTable->get(taskOperation.uuid);
     // 运行任务
-    Task::run(task, config);
+    taskTable->run(task, config);
     this->response<int>(response, message::ResponseStatus::Normal, nullptr);
   });
 }

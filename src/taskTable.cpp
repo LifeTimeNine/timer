@@ -11,48 +11,7 @@
 #include "util.hpp"
 #include "notify.hpp"
 
-void Task::run(Task task, Config* config)
-{
-  std::thread t([task, config]() {
-    if (config->getNotifyUrl().empty()) Log::info("task run [uuid: {}]", task.uuid);
-    // 记录开始时间
-    auto startTime = std::chrono::system_clock::now();
-    auto startTimePoint = date::floor<std::chrono::seconds>(startTime);
-    message::RunResult result;
-    result.uuid = task.uuid;
-    result.startTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", &startTimePoint);
-    // 通知任务开始运行
-    std::thread taskStartNotifyThread([&task, &startTimePoint, &result, config]() {
-      message::RunBeforeNotify runBeforeNotify;
-      runBeforeNotify.uuid = task.uuid;
-      runBeforeNotify.startTime = result.startTime;
-      Cron cron = task.cronRange;
-      date::sys_seconds nextRunTime = cron.getNextRunTime(startTimePoint);
-      runBeforeNotify.nextRunTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", &nextRunTime);
-      notify::taskStart(config->getNotifyUrl(), &runBeforeNotify);
-    });
-    taskStartNotifyThread.detach();
-
-    Process process(task.execFile, task.args);
-    result.isNormalExit = process.getExitStatus() == 0;
-    auto endTime = std::chrono::system_clock::now();
-    auto endTimePoint = date::floor<std::chrono::seconds>(endTime);
-    result.endTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", &endTimePoint);
-    std::stringstream str;
-    str << std::setprecision(3) << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count()) / 1000;
-    result.runtime = str.str();
-    result.out = process.getStdout();
-    result.err = process.getStderr();
-    // 通知任务运行结束
-    std::thread taskFinishNotifyThread([config, result]() {
-      notify::taskFinish(config->getNotifyUrl(), &result);
-    });
-    taskFinishNotifyThread.detach();
-  });
-  t.detach();
-}
-
-TaskTable::TaskTable(std::string dbPath): dbPath(dbPath), db(nullptr), table(), mutex()
+TaskTable::TaskTable(std::string dbPath): dbPath(dbPath), db(nullptr), table(), mutex(), runCountAtomic(0)
 {
   std::lock_guard<std::mutex> lock(mutex);
   table.clear();
@@ -63,12 +22,13 @@ TaskTable::TaskTable(std::string dbPath): dbPath(dbPath), db(nullptr), table(), 
     Log::info("<{}> DB dir not exits: {}", "task_table", dir);
     // 创建目录
     std::string command = "mkdir -p " + dir;
-    system(command.data());
+    if (system(command.data()) != 0) {
+      throw std::runtime_error("db dir create fail[" + dir + "]");
+    }
   }
   // 打开数据库
   if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
     throw std::runtime_error("db open fail[" + std::string(sqlite3_errmsg(db)) + "]");
-    return;
   }
   // 连接密码
   std::string password = "timer_1411";
@@ -126,10 +86,44 @@ TaskTable::~TaskTable()
   }
 }
 
-bool TaskTable::initiate()
+void TaskTable::run(Task task, Config* config)
 {
-  
-  return true;
+  std::thread t([task, config, this]() {
+    runCountAtomic.fetch_add(1, std::memory_order_seq_cst);
+    if (config->getNotifyUrl().empty()) Log::info("task run [uuid: {}]", task.uuid);
+    // 记录开始时间
+    auto startTime = std::chrono::system_clock::now();
+    auto startTimePoint = date::floor<std::chrono::seconds>(startTime);
+    message::RunResult result;
+    result.uuid = task.uuid;
+    result.startTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", &startTimePoint);
+    // 通知任务开始运行
+    std::thread taskStartNotifyThread([&task, &startTimePoint, &result, config]() {
+      message::RunBeforeNotify runBeforeNotify;
+      runBeforeNotify.uuid = task.uuid;
+      runBeforeNotify.startTime = result.startTime;
+      Cron cron = task.cronRange;
+      date::sys_seconds nextRunTime = cron.getNextRunTime(startTimePoint);
+      runBeforeNotify.nextRunTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", &nextRunTime);
+      notify::taskStart(config->getNotifyUrl(), &runBeforeNotify);
+    });
+    taskStartNotifyThread.detach();
+
+    Process process(task.execFile, task.args);
+    result.isNormalExit = process.getExitStatus() == 0;
+    auto endTime = std::chrono::system_clock::now();
+    auto endTimePoint = date::floor<std::chrono::seconds>(endTime);
+    result.endTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", &endTimePoint);
+    std::stringstream str;
+    str << std::setprecision(3) << static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count()) / 1000;
+    result.runtime = str.str();
+    result.out = process.getStdout();
+    result.err = process.getStderr();
+    // 通知任务运行结束
+    notify::taskFinish(config->getNotifyUrl(), &result);
+    runCountAtomic.fetch_sub(1, std::memory_order_seq_cst);
+  });
+  t.detach();
 }
 
 bool TaskTable::exist(std::string uuid)
@@ -208,4 +202,14 @@ std::vector<Task> TaskTable::list()
     result.push_back(it->second);
   }
   return result;
+}
+
+size_t TaskTable::size()
+{
+  return table.size();
+}
+
+size_t TaskTable::runCount()
+{
+  return runCountAtomic.load(std::memory_order_seq_cst);
 }

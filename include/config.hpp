@@ -53,19 +53,9 @@ class Config
      */
     std::string getNotifyUrl();
     /**
-     * 设置HTTP服务地址
-     * @param host  地址
-     */
-    Config setHttpHost(std::string host);
-    /**
      * 获取HTTP服务地址
      */
     std::string getHttpHost();
-    /**
-     * 设置HTTP服务端口
-     * @param port
-     */
-    Config setHttpPort(unsigned short port);
     /**
      * 获取HTTP服务端口
      */

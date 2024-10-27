@@ -11,7 +11,7 @@ Config::Config(std::string file)
     httpPort = ini.GetLongValue("http", "port", 10010);
     logDir = ini.GetValue("log", "dir", "/var/log/timer");
     logLevel = ini.GetLongValue("log", "level", 0);
-    dbPath =ini.GetValue("db", "path", "/var/lib/timer/tas.db");
+    dbPath =ini.GetValue("db", "path", "/var/lib/timer/task.db");
   }
 }
 
@@ -23,20 +23,9 @@ std::string Config::getNotifyUrl()
 {
   return notifyUrl;
 }
-Config Config::setHttpHost(std::string host)
-{
-  httpHost = host;
-  return *this;
-}
 std::string Config::getHttpHost()
 {
   return httpHost;
-}
-
-Config Config::setHttpPort(unsigned short port)
-{
-  httpPort = port;
-  return *this;
 }
 unsigned short Config::getHttpPort()
 {

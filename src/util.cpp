@@ -86,7 +86,9 @@ namespace util
       if (stat(dir.data(), &info) != 0 || (info.st_mode & S_IFDIR) == 0 ) {
         // 创建目录
         std::string command = "mkdir -p " + dir;
-        system(command.data());
+        if (system(command.data()) != 0) {
+          return false;
+        }
       }
     }
     std::ofstream file(filename);

@@ -8,6 +8,10 @@
 #include "httpThread.hpp"
 #include "util.hpp"
 
+#ifndef INSTALL_PREFIX
+  #define INSTALL_PREFIX "/usr/local"
+#endif
+
 Config* config = nullptr;
 TaskTable* taskTable = nullptr;
 HttpThread* httpThread = nullptr;
@@ -19,15 +23,11 @@ static bool isReload = false;
 int main(int argc, char *argv[])
 {
   // 解析参数
-  arg.add<std::string>("config", 'c', "Config File", false, "/etc/timer.ini");
-  arg.add<std::string>("host", 'h', "HTTP Host", false);
-  arg.add<unsigned short>("port", 'p', "HTTP Port", false);
+  arg.add<std::string>("config", 'c', "Config File", false, std::string(INSTALL_PREFIX) + "/etc/timer.ini");
   arg.parse_check(argc, argv);
 
   // 初始化配置类
   config = new Config(arg.get<std::string>("config"));
-  if (arg.exist("host")) config->setHttpHost(arg.get<std::string>("host"));
-  if (arg.exist("port")) config->setHttpPort(arg.get<unsigned short>("port"));
 
   // 获取PID文件中的数据
   std::string pidFileData = util::fileGetContents(config->getPidFile());
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
       if (!task.loop || !task.enable) continue;
       if (task.cronRange.checkRunTime(tm.tm_sec, tm.tm_min, tm.tm_hour, tm.tm_mday, tm.tm_mon + 1, tm.tm_wday)) {
         // 运行任务
-        Task::run(task, config);
+        taskTable->run(task, config);
       }
     }
   });
@@ -107,8 +107,6 @@ int main(int argc, char *argv[])
 
     // 初始化配置类
     config = new Config(arg.get<std::string>("config"));
-    if (arg.exist("host")) config->setHttpHost(arg.get<std::string>("host"));
-    if (arg.exist("port")) config->setHttpPort(arg.get<unsigned short>("port"));
     // 初始化日志模块
     Log::initiate(config->getLogDir(), config->getLogLevel());
     if (!util::filePutContents(config->getPidFile(), std::to_string(getpid()))) {

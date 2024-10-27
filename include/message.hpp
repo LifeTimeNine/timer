@@ -16,6 +16,23 @@ namespace message
     /** 任务完成 */
     TaskFinish
   };
+
+  /**
+   * 状态
+   */
+  class State
+  {
+    public:
+      size_t taskTotal;
+      size_t runningNumber;
+
+    friend void to_json(nlohmann::json& json, const State& state)
+    {
+      json["task_total"] = state.taskTotal;
+      json["running_number"] = state.runningNumber;
+    }
+  };
+
   /**
    * 任务类
    */

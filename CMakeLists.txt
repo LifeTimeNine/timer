@@ -1,8 +1,13 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(timer VERSION 0.1.0 LANGUAGES C CXX)
+project(timer
+  VERSION 0.1.0
+  LANGUAGES C CXX)
 
 # 启用spdlog
 add_definitions(-DSPDLOG_COMPILED_LIB)
+# 安装目录
+add_definitions(-DINSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}")
+set(CMAKE_INSTALL_SYSCONFDIR etc)
 
 # 引入 ada
 include_directories(library/ada)
@@ -11,7 +16,6 @@ set(LIBRARY_ADA library/ada/ada.cpp)
 include_directories(library/cmdline)
 # 引入date
 include_directories(library/date/include)
-# aux_source_directory(library/date/src LIBRARY_DATE)
 # 引入httplib
 include_directories(library/httplib)
 # 引入nlohmann
@@ -31,7 +35,6 @@ aux_source_directory(src SOURCE)
 
 set(LIBRARY_SOURCE
   ${LIBRARY_ADA}
-  # ${LIBRARY_DATE}
   ${LIBRARY_SIMPLEINI}
   ${LIBRARY_SPDLOG}
   ${LIBRARY_SQLITE}
@@ -39,3 +42,7 @@ set(LIBRARY_SOURCE
 )
 
 add_executable(timer main.cpp ${SOURCE} ${LIBRARY_SOURCE})
+
+# 安装
+install(TARGETS timer CONFIGURATIONS Release RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(FILES config.ini RENAME timer.ini CONFIGURATIONS Release DESTINATION ${CMAKE_INSTALL_SYSCONFDIR})

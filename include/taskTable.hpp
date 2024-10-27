@@ -5,6 +5,7 @@
 #include <map>
 #include <mutex>
 #include <vector>
+#include <atomic>
 
 #include "sqlite3.h"
 #include "cron.hpp"
@@ -23,13 +24,6 @@ class Task
     Cron cronRange;
 
     Task(): cronRange() {}
-
-    /**
-     * 运行
-     * @param task    任务类
-     * @param config  配置类
-     */
-    static void run(Task task, Config* config);
 };
 
 /**
@@ -42,6 +36,7 @@ private:
   sqlite3* db;
   std::map<std::string, Task> table;
   std::mutex mutex;
+  std::atomic<unsigned int> runCountAtomic;
 public:
   /** 
    * 任务表
@@ -51,9 +46,11 @@ public:
   ~TaskTable();
 
   /**
-   * 初始化
+   * 运行
+   * @param task    任务类
+   * @param config  配置类
    */
-  bool initiate();
+  void run(Task task, Config* config);
 
   /**
    * 检测任务是否存在
@@ -83,4 +80,14 @@ public:
    * 获取列表
    */
   std::vector<Task> list();
+
+  /**
+   * 获取任务表大小
+   */
+  size_t size();
+
+  /**
+   * 获取正在运行的数量
+   */
+  size_t runCount();
 };

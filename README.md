@@ -20,11 +20,11 @@ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/timer .. && make in
 
 启动
 ~~~shell
-/usr/local/sbin/timer
+/usr/local/bin/timer
 ~~~
 指定配置文件启动
 ~~~shell
-/usr/local/sbin/timer -c /usr/local/etc/timer.ini
+/usr/local/bin/timer -c /usr/local/etc/timer.ini
 ~~~
 
 ## 以系统服务的方式运行
@@ -38,7 +38,7 @@ Wants = network.target
 
 [Service]
 Type = simple
-ExecStart =/usr/local/sbin/timer -c /usr/local/etc/timer.ini
+ExecStart =/usr/local/bin/timer -c /usr/local/etc/timer.ini
 User = root
 Group = root
 Restart = always

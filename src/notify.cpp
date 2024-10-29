@@ -15,22 +15,22 @@ namespace notify
     );
   }
 
-  bool taskStart(const std::string url, const message::RunBeforeNotify* runBeforeNotify)
+  bool taskStart(const std::string url, const message::notify::RunBefore* runBefore)
   {
     if (url.empty()) return true;
     Log::info("<{}> task_start [uuid:{},start_time:{},next_run_time:{}]",
       "notify",
-      runBeforeNotify->uuid,
-      runBeforeNotify->startTime,
-      runBeforeNotify->nextRunTime);
+      runBefore->uuid,
+      runBefore->startTime,
+      runBefore->nextRunTime);
     nlohmann::json json;
     json["event"] = message::NotifyEvent::TaskStart;
-    json["data"] = *runBeforeNotify;
+    json["data"] = *runBefore;
     httplib::Result result = request(url, json);
     return result.error() == httplib::Error::Success && result.value().status == 200;
   }
 
-  bool taskFinish(const std::string url, const message::RunResult* runResult)
+  bool taskFinish(const std::string url, const message::notify::RunResult* runResult)
   {
     if (url.empty()) return true;
     nlohmann::json json;

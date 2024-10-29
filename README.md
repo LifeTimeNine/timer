@@ -82,6 +82,7 @@ systemctl enable timer
 - 请求方法: `GET`
 - 请求地址: `/`
 - 请求参数: 无
+- 请求数据: 无
 - 返回结果
   + `running_number`: (int) 正在运行的任务数量
   + `task_total`: (int) 任务总数
@@ -94,6 +95,7 @@ systemctl enable timer
 - 内容类型: `application/json`
 - 请求参数:
   + `uuid`: (string) 唯一标识
+- 请求数据:
   + `exec_file`: (string) 可执行文件地址
   + `args`: (string) 参数
   + `loop`: (bool) 是否循环
@@ -106,6 +108,7 @@ systemctl enable timer
 - 请求方法: `GET`
 - 请求地址: `/task`
 - 请求参数: 无
+- 请求数据: 无
 - 返回结果
   + `[].uuid`: (string) 唯一标识
   + `[].exec_file`: (string) 可执行文件地址
@@ -121,6 +124,7 @@ systemctl enable timer
 - 内容类型: `application/json`
 - 请求参数:
   + `uuid`: (string) 唯一标识
+- 请求数据: 无
 - 返回结果
   + `uuid`: (string) 唯一标识
   + `exec_file`: (string) 可执行文件地址
@@ -136,15 +140,27 @@ systemctl enable timer
 - 内容类型: `application/json`
 - 请求参数:
   + `uuid`: (string) 唯一标识
+- 请求数据: 无
 - 返回结果: 无
 
 ### 运行任务
 
 - 请求方法: `POST`
-- 请求地址: `/run`
+- 请求地址: `/task/run`
 - 内容类型: `application/json`
 - 请求参数:
   + `uuid`: (string) 唯一标识
+- 请求数据: 无
+- 返回结果: 无
+
+### 设置任务状态
+- 请求方法: `POST`
+- 请求地址: `/task/status`
+- 内容类型: `application/json`
+- 请求参数:
+  + `uuid`: (string) 唯一标识
+- 请求数据: 无
+  + `enable`: (bool) 是否启用
 - 返回结果: 无
 
 ## 通知事件

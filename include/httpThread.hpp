@@ -44,9 +44,13 @@ class HttpThread
      */
     void task();
     /**
-     * 注册运行接口
+     * 注册任务运行接口
      */
-    void running();
+    void taskRun();
+    /**
+     * 注册任务状态管理接口
+     */
+    void taskStatus();
     /**
      * 响应数据
      * @param response  响应类
@@ -55,5 +59,5 @@ class HttpThread
      * @param message   消息
      */
     template <typename T>
-    void response(httplib::Response& response, message::ResponseStatus status, T* data, std::string message = "success");
+    void response(httplib::Response& response, message::http::Status status, T* data, std::string message = "success");
 };

@@ -13,10 +13,10 @@ server()
     message::State state;
     state.taskTotal = this->taskTable->size();
     state.runningNumber = this->taskTable->runCount();
-    this->response<message::State>(response, message::ResponseStatus::Normal, &state);
+    this->response<message::State>(response, message::http::Status::Normal, &state);
   });
   task();
-  running();
+  taskRun();
 }
 
 void HttpThread::start()
@@ -52,17 +52,16 @@ void HttpThread::task()
     if (request.has_param("uuid")) {
       if (taskTable->exist(request.get_param_value("uuid"))) {
         Task taskInfo = taskTable->get(request.get_param_value("uuid"));
-        message::Task task;
-        task.uuid = taskInfo.uuid;
+        message::http::TaskSave task;
         task.execFile = taskInfo.execFile;
         task.args = taskInfo.args;
         task.cron = taskInfo.cron;
         task.loop = taskInfo.loop;
         task.enable = taskInfo.enable;
         task.cron = taskInfo.cron;
-        this->response(response, message::ResponseStatus::Normal, &task);
+        this->response(response, message::http::Status::Normal, &task);
       } else {
-        this->response<int>(response, message::ResponseStatus::TaskNotExit, nullptr, "Task not exits!");
+        this->response<int>(response, message::http::Status::TaskNotExit, nullptr, "Task not exits!");
       }
     } else {
       std::vector<message::Task> result;
@@ -77,13 +76,18 @@ void HttpThread::task()
         task.cron = item.cron;
         result.push_back(task);
       }
-      this->response(response, message::ResponseStatus::Normal, &result);
+      this->response(response, message::http::Status::Normal, &result);
     }
   });
 
   server.Post("/task", [this](const httplib::Request& request, httplib::Response& response) {
     Log::info("<{}> post task", "http_server");
-    message::Task task;
+    std::string uuid = request.get_param_value("uuid");
+    if (uuid.empty()) {
+      this->response<int>(response, message::http::Status::ParamsParseFail, nullptr, "[uuid] cannot be empty");
+      return;
+    }
+    message::http::TaskSave task;
     try
     {
       nlohmann::json::parse(request.body).get_to(task);
@@ -91,77 +95,95 @@ void HttpThread::task()
     catch(const std::exception& e)
     {
       Log::warn("<{}> post task  json parse fail: {}", "http_server", request.body);
-      this->response<int>(response, message::ResponseStatus::ParamsParseFail, nullptr, "Parameter parsing failed!");
+      this->response<int>(response, message::http::Status::ParamsParseFail, nullptr, "Parameter parsing failed!");
       return;
     }
     // 保存信息
     Task saveTask;
-    saveTask.uuid = task.uuid;
+    saveTask.uuid = uuid;
     saveTask.execFile = task.execFile;
     saveTask.args = task.args;
     saveTask.loop = task.loop;
     saveTask.enable = task.enable;
     saveTask.cron = task.cron;
     taskTable->set(saveTask);
-    this->response<int>(response, message::ResponseStatus::Normal, nullptr);
+    this->response<int>(response, message::http::Status::Normal, nullptr);
   });
 
   server.Delete("/task", [this](const httplib::Request& request, httplib::Response& response) {
     Log::info("<{}> delete task", "http_server");
-
-    message::TaskOperation taskOperation;
-    try
-    {
-      nlohmann::json::parse(request.body).get_to(taskOperation);
-    }
-    catch(const std::exception& e)
-    {
-      Log::warn("<{}> delete task  json parse fail: {}", "http_server", request.body);
-      this->response<int>(response, message::ResponseStatus::ParamsParseFail, nullptr, "Parameter parsing failed!");
+    std::string uuid = request.get_param_value("uuid");
+    if (uuid.empty()) {
+      this->response<int>(response, message::http::Status::ParamsParseFail, nullptr, "[uuid] cannot be empty");
       return;
     }
-
     // 获取任务信息
-    if (!taskTable->exist(taskOperation.uuid)) {
+    if (!taskTable->exist(uuid)) {
       response.status = httplib::StatusCode::NotFound_404;
-      this->response<int>(response, message::ResponseStatus::TaskNotExit, nullptr, "Task not exits!");
+      this->response<int>(response, message::http::Status::TaskNotExit, nullptr, "Task not exits!");
       return;
     }
     // 从任务表删除
-    taskTable->remove(taskOperation.uuid);
-    this->response<int>(response, message::ResponseStatus::Normal, nullptr);
+    taskTable->remove(uuid);
+    this->response<int>(response, message::http::Status::Normal, nullptr);
   });
 }
 
-void HttpThread::running()
+void HttpThread::taskRun()
 {
-  server.Post("/run", [this](const httplib::Request& request, httplib::Response& response) {
+  server.Post("/task/run", [this](const httplib::Request& request, httplib::Response& response) {
     Log::info("<{}> post run", "http_server");
-    message::TaskOperation taskOperation;
-    try
-    {
-      nlohmann::json::parse(request.body).get_to(taskOperation);
-    }
-    catch(const std::exception& e)
-    {
-      Log::warn("<{}> delete task  json parse fail: {}", "http_server", request.body);
-      this->response<int>(response, message::ResponseStatus::ParamsParseFail, nullptr, "Parameter parsing failed!");
+    std::string uuid = request.get_param_value("uuid");
+    if (uuid.empty()) {
+      this->response<int>(response, message::http::Status::ParamsParseFail, nullptr, "[uuid] cannot be empty");
       return;
     }
     // 获取任务信息
-    if (!taskTable->exist(taskOperation.uuid)) {
-      this->response<int>(response, message::ResponseStatus::TaskNotExit, nullptr, "Task not exits!");
+    if (!taskTable->exist(uuid)) {
+      this->response<int>(response, message::http::Status::TaskNotExit, nullptr, "Task not exits!");
       return;
     }
-    Task task = taskTable->get(taskOperation.uuid);
+    Task task = taskTable->get(uuid);
     // 运行任务
     taskTable->run(task, config);
-    this->response<int>(response, message::ResponseStatus::Normal, nullptr);
+    this->response<int>(response, message::http::Status::Normal, nullptr);
+  });
+}
+
+void HttpThread::taskStatus()
+{
+  server.Post("/task/status", [this](const httplib::Request& request, httplib::Response& response) {
+    Log::info("<{}> post run", "http_server");
+    std::string uuid = request.get_param_value("uuid");
+    if (uuid.empty()) {
+      this->response<int>(response, message::http::Status::ParamsParseFail, nullptr, "[uuid] cannot be empty");
+      return;
+    }
+    message::http::TaskStatus taskStatus;
+    try
+    {
+      nlohmann::json::parse(request.body).get_to(taskStatus);
+    }
+    catch(const std::exception& e)
+    {
+      Log::warn("<{}> post task  json parse fail: {}", "http_server", request.body);
+      this->response<int>(response, message::http::Status::ParamsParseFail, nullptr, "Parameter parsing failed!");
+      return;
+    }
+    // 获取任务信息
+    if (!taskTable->exist(uuid)) {
+      this->response<int>(response, message::http::Status::TaskNotExit, nullptr, "Task not exits!");
+      return;
+    }
+    Task task = taskTable->get(uuid);
+    task.enable = taskStatus.enable;
+    taskTable->set(task);
+    this->response<int>(response, message::http::Status::Normal, nullptr);
   });
 }
 
 template <typename T>
-void HttpThread::response(httplib::Response& response, message::ResponseStatus status, T* data, std::string message)
+void HttpThread::response(httplib::Response& response, message::http::Status status, T* data, std::string message)
 {
   struct message::Response<T> res = {status, data, message};
   nlohmann::json json = res;

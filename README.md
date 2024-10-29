@@ -8,14 +8,14 @@
 在项目根目录执行
 ~~~shell
 mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release .. && make install
+cmake .. && make install
 ~~~
 默认安装目录是`/usr/local`
 
 如果需要指定安装目录
 ~~~shell
 mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/opt/timer .. && make install
+cmake -DCMAKE_INSTALL_PREFIX=/opt/timer .. && make install
 ~~~
 
 启动
@@ -70,7 +70,7 @@ systemctl enable timer
 - `log.level` 日志等级 0-trace, 1-debug, 2-info, 3-warn, 4-err, 5-critical 6-off
 - `db.path` 数据库文件路径
 
-## 管理接口说明
+## 管理接口
 
 ### 状态码说明
 - `0`: 正常
@@ -147,10 +147,22 @@ systemctl enable timer
   + `uuid`: (string) 唯一标识
 - 返回结果: 无
 
-## 通知事件说明
+## 通知事件
+
+格式为
+~~~json
+{
+  "event": 1,
+  "data": {
+    "uuid": "uuid",
+    "start_time": "2024-01-01 00:00:00",
+    "next_run_time": "2024-01-01 00:00:01"
+  }
+}
+~~~
 
 ### 开始执行
-
+- 事件标识: `1`
 - 请求方法: `POST`
 - 内容类型: `application/json`
 - 请求参数:
@@ -159,6 +171,7 @@ systemctl enable timer
   + `next_run_time`: (string) 下一次运行时间
 
 ### 执行结束
+- 事件标识: `2`
 - 请求方法: `POST`
 - 内容类型: `application/json`
 - 请求参数:

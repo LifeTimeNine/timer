@@ -94,18 +94,18 @@ void TaskTable::run(Task task, Config* config)
     // 记录开始时间
     auto startTime = std::chrono::system_clock::now();
     auto startTimePoint = date::floor<std::chrono::seconds>(startTime);
-    message::RunResult result;
+    message::notify::RunResult result;
     result.uuid = task.uuid;
     result.startTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", &startTimePoint);
     // 通知任务开始运行
     std::thread taskStartNotifyThread([&task, &startTimePoint, &result, config]() {
-      message::RunBeforeNotify runBeforeNotify;
-      runBeforeNotify.uuid = task.uuid;
-      runBeforeNotify.startTime = result.startTime;
+      message::notify::RunBefore runBefore;
+      runBefore.uuid = task.uuid;
+      runBefore.startTime = result.startTime;
       Cron cron = task.cronRange;
       date::sys_seconds nextRunTime = cron.getNextRunTime(startTimePoint);
-      runBeforeNotify.nextRunTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", &nextRunTime);
-      notify::taskStart(config->getNotifyUrl(), &runBeforeNotify);
+      runBefore.nextRunTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", &nextRunTime);
+      notify::taskStart(config->getNotifyUrl(), &runBefore);
     });
     taskStartNotifyThread.detach();
 

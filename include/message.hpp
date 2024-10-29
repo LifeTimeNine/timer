@@ -214,7 +214,7 @@ namespace message
     template <typename T>
     struct Response
     {
-      ResponseStatus status;
+      Status status;
       T* data;
       std::string message;
 

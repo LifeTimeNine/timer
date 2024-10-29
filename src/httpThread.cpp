@@ -185,7 +185,7 @@ void HttpThread::taskStatus()
 template <typename T>
 void HttpThread::response(httplib::Response& response, message::http::Status status, T* data, std::string message)
 {
-  struct message::Response<T> res = {status, data, message};
+  struct message::http::Response<T> res = {status, data, message};
   nlohmann::json json = res;
   response.set_content(json.dump(), "application/json");
 }

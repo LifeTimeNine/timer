@@ -17,6 +17,7 @@ server()
   });
   task();
   taskRun();
+  taskStatus();
 }
 
 void HttpThread::start()

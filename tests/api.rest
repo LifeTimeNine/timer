@@ -3,10 +3,10 @@ GET http://127.0.0.1:10010
 
 ### 保存任务
 POST http://127.0.0.1:10010/task
+  ?uuid=task1
 Content-Type: application/json
 
 {
-  "uuid": "task10",
   "exec_file": "/bin/sh",
   "args": "-c /timer/test.sh",
   "loop": true,
@@ -23,6 +23,7 @@ GET http://127.0.0.1:10010/task
 
 ### 删除任务
 DELETE http://127.0.0.1:10010/task
+  ?uuid=task1
 Content-Type: application/json
 
 {
@@ -31,9 +32,15 @@ Content-Type: application/json
 
 
 ### 运行任务
-POST http://127.0.0.1:10010/run
+POST http://127.0.0.1:10010/task/run
+  ?uuid=task1
+Content-Type: application/json
+
+### 设置任务状态
+POST http://127.0.0.1:10010/task/status
+  ?uuid=task1
 Content-Type: application/json
 
 {
-  "uuid": "task01"
+  "enable": false
 }

@@ -49,7 +49,7 @@ void HttpThread::watch()
 void HttpThread::task()
 {
   server.Get("/task", [this](const httplib::Request& request, httplib::Response& response) {
-    Log::info("<{}> get task", "http_server");
+    Log::info("<{}> get /task", "http_server");
     if (request.has_param("uuid")) {
       if (taskTable->exist(request.get_param_value("uuid"))) {
         Task taskInfo = taskTable->get(request.get_param_value("uuid"));
@@ -82,7 +82,7 @@ void HttpThread::task()
   });
 
   server.Post("/task", [this](const httplib::Request& request, httplib::Response& response) {
-    Log::info("<{}> post task", "http_server");
+    Log::info("<{}> post /task", "http_server");
     std::string uuid = request.get_param_value("uuid");
     if (uuid.empty()) {
       this->response<int>(response, message::http::Status::ParamsParseFail, nullptr, "[uuid] cannot be empty");
@@ -112,7 +112,7 @@ void HttpThread::task()
   });
 
   server.Delete("/task", [this](const httplib::Request& request, httplib::Response& response) {
-    Log::info("<{}> delete task", "http_server");
+    Log::info("<{}> delete /task", "http_server");
     std::string uuid = request.get_param_value("uuid");
     if (uuid.empty()) {
       this->response<int>(response, message::http::Status::ParamsParseFail, nullptr, "[uuid] cannot be empty");
@@ -133,7 +133,7 @@ void HttpThread::task()
 void HttpThread::taskRun()
 {
   server.Post("/task/run", [this](const httplib::Request& request, httplib::Response& response) {
-    Log::info("<{}> post run", "http_server");
+    Log::info("<{}> post /task/run", "http_server");
     std::string uuid = request.get_param_value("uuid");
     if (uuid.empty()) {
       this->response<int>(response, message::http::Status::ParamsParseFail, nullptr, "[uuid] cannot be empty");
@@ -154,7 +154,7 @@ void HttpThread::taskRun()
 void HttpThread::taskStatus()
 {
   server.Post("/task/status", [this](const httplib::Request& request, httplib::Response& response) {
-    Log::info("<{}> post run", "http_server");
+    Log::info("<{}> post /task/status", "http_server");
     std::string uuid = request.get_param_value("uuid");
     if (uuid.empty()) {
       this->response<int>(response, message::http::Status::ParamsParseFail, nullptr, "[uuid] cannot be empty");

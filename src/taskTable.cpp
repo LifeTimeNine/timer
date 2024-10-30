@@ -30,9 +30,6 @@ TaskTable::TaskTable(std::string dbPath): dbPath(dbPath), db(nullptr), table(), 
   if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
     throw std::runtime_error("db open fail[" + std::string(sqlite3_errmsg(db)) + "]");
   }
-  // 连接密码
-  std::string password = "timer_1411";
-  // if ()
   Log::info("<{}> db path: {}", "task_table", dbPath);
   char* errmsg;
   int result;
@@ -103,8 +100,10 @@ void TaskTable::run(Task task, Config* config)
       runBefore.uuid = task.uuid;
       runBefore.startTime = result.startTime;
       Cron cron = task.cronRange;
-      date::sys_seconds nextRunTime = cron.getNextRunTime(startTimePoint);
-      runBefore.nextRunTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", &nextRunTime);
+      if (task.loop) {
+        date::sys_seconds nextRunTime = cron.getNextRunTime(startTimePoint);
+        runBefore.nextRunTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", &nextRunTime);
+      }
       notify::taskStart(config->getNotifyUrl(), &runBefore);
     });
     taskStartNotifyThread.detach();

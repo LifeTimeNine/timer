@@ -9,6 +9,9 @@ config(config),
 taskTable(taskTable),
 server()
 {
+  server.new_task_queue = []{
+    return new httplib::ThreadPool{2, 16};
+  };
   server.Get("/", [this](const httplib::Request& request, httplib::Response& response) {
     message::State state;
     state.taskTotal = this->taskTable->size();

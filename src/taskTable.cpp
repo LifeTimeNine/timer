@@ -3,6 +3,7 @@
 #include <map>
 #include <sys/stat.h>
 #include <thread>
+#include <mutex>
 #include "taskTable.hpp"
 #include "log.hpp"
 #include "cron.hpp"
@@ -88,6 +89,7 @@ void TaskTable::run(Task task, Config* config)
   std::thread t([task, config, this]() {
     runCountAtomic.fetch_add(1, std::memory_order_seq_cst);
     if (config->getNotifyUrl().empty()) Log::info("task run [uuid: {}]", task.uuid);
+    std::mutex notifyMutex;
     // 记录开始时间
     auto startTime = std::chrono::system_clock::now();
     auto startTimePoint = date::floor<std::chrono::seconds>(startTime);
@@ -95,7 +97,8 @@ void TaskTable::run(Task task, Config* config)
     result.uuid = task.uuid;
     result.startTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", &startTimePoint);
     // 通知任务开始运行
-    std::thread taskStartNotifyThread([&task, &startTimePoint, &result, config]() {
+    std::thread taskStartNotifyThread([&task, &startTimePoint, &result, config, &notifyMutex]() {
+      std::lock_guard<std::mutex> lock(notifyMutex);
       message::notify::RunBefore runBefore;
       runBefore.uuid = task.uuid;
       runBefore.startTime = result.startTime;
@@ -119,8 +122,9 @@ void TaskTable::run(Task task, Config* config)
     result.out = process.getStdout();
     result.err = process.getStderr();
     // 通知任务运行结束
-    notify::taskFinish(config->getNotifyUrl(), &result);
     runCountAtomic.fetch_sub(1, std::memory_order_seq_cst);
+    std::lock_guard<std::mutex> lock(notifyMutex);
+    notify::taskFinish(config->getNotifyUrl(), &result);
   });
   t.detach();
 }

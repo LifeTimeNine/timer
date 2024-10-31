@@ -251,10 +251,7 @@ void Cron::calculateNextRunMinute(date::sys_seconds &time)
   unsigned long result = getMinute() & (minuteRange << current);
   if (result == 0) {
     // 时间调整到下一小时的0分0秒
-    std::chrono::hours incHour(1);
-    std::chrono::minutes decMinute(tm.tm_min);
-    std::chrono::seconds decSecond(tm.tm_sec);
-    time = time + incHour - decMinute - decSecond;
+    time = time + std::chrono::hours{1} - std::chrono::minutes{tm.tm_min} - std::chrono::seconds{tm.tm_sec};
     calculateNextRunHour(time);
   } else {
     // 计算下一次满足条件的分钟
@@ -281,9 +278,7 @@ void Cron::calculateNextRunSecond(date::sys_seconds &time)
   unsigned long result = getSecond() & (secondRange << current);
   if (result == 0) {
     // 时间调整到下一分种的0秒
-    std::chrono::minutes incMinute(1);
-    std::chrono::seconds decSecond(tm.tm_sec);
-    time = time + incMinute - decSecond;
+    time = time + std::chrono::minutes{1} - std::chrono::seconds{tm.tm_sec};
     calculateNextRunMinute(time);
   } else {
     // 计算下一次满足条件的秒
@@ -297,8 +292,7 @@ void Cron::calculateNextRunSecond(date::sys_seconds &time)
       }
     }
     if (next != current) {
-      std::chrono::seconds incSecond(next - current);
-      time += incSecond;
+      time += std::chrono::seconds{next - current};
     }
   }
 }
@@ -325,8 +319,7 @@ void Cron::calculateNextRunWeek(date::sys_seconds &time)
       }
     }
     if (next != current) {
-      date::days incDay(next - current);
-      time += incDay;
+      time += date::days{next - current};
     }
     calculateNextRunHour(time);
   }

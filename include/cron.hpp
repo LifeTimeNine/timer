@@ -78,6 +78,11 @@ public:
 
   /**
    * 获取下一次执行的时间
+   */
+  date::sys_seconds getNextRunTime();
+
+  /**
+   * 获取下一次执行的时间
    * @param time  当前时间
    */
   date::sys_seconds getNextRunTime(date::sys_seconds time);

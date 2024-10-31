@@ -130,6 +130,11 @@ unsigned long Cron::parseItem(std::string cronItem, unsigned short min, unsigned
   return result;
 }
 
+date::sys_seconds Cron::getNextRunTime()
+{
+  return getNextRunTime(date::floor<std::chrono::seconds>(std::chrono::system_clock::now()));
+}
+
 date::sys_seconds Cron::getNextRunTime(date::sys_seconds time)
 {
   time += std::chrono::seconds{1};
@@ -233,8 +238,7 @@ void Cron::calculateNextRunHour(date::sys_seconds &time)
       }
     }
     if (next != current) {
-      std::chrono::hours incHour(next - current);
-      time += incHour;
+      time =  time + std::chrono::hours{next - current} - std::chrono::minutes{tm.tm_min} - std::chrono::seconds{tm.tm_sec};
     }
     calculateNextRunMinute(time);
   }
@@ -264,8 +268,7 @@ void Cron::calculateNextRunMinute(date::sys_seconds &time)
       }
     }
     if (next != current) {
-      std::chrono::minutes incMinute(next - current);
-      time += incMinute;
+      time = time + std::chrono::minutes{next - current}  - std::chrono::seconds{tm.tm_sec};
     }
     calculateNextRunSecond(time);
   }

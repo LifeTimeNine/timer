@@ -110,7 +110,15 @@ void HttpThread::task()
     saveTask.loop = task.loop;
     saveTask.enable = task.enable;
     saveTask.cron = task.cron;
-    taskTable->set(saveTask);
+    try
+    {
+      taskTable->set(saveTask);
+    }
+    catch(const std::exception& e)
+    {
+      this->response<int>(response, message::http::Status::OperationFail, nullptr, std::string(e.what()));
+      return;
+    }
     this->response<int>(response, message::http::Status::Normal, nullptr);
   });
 
@@ -127,8 +135,16 @@ void HttpThread::task()
       this->response<int>(response, message::http::Status::TaskNotExit, nullptr, "Task not exits!");
       return;
     }
-    // 从任务表删除
-    taskTable->remove(uuid);
+    try
+    {
+      // 从任务表删除
+      taskTable->remove(uuid);
+    }
+    catch(const std::exception& e)
+    {
+      this->response<int>(response, message::http::Status::OperationFail, nullptr, std::string(e.what()));
+      return;
+    }
     this->response<int>(response, message::http::Status::Normal, nullptr);
   });
 }
@@ -181,7 +197,15 @@ void HttpThread::taskStatus()
     }
     Task task = taskTable->get(uuid);
     task.enable = taskStatus.enable;
-    taskTable->set(task);
+    try
+    {
+      taskTable->set(task);
+    }
+    catch(const std::exception& e)
+    {
+      this->response<int>(response, message::http::Status::OperationFail, nullptr, std::string(e.what()));
+      return;
+    }
     this->response<int>(response, message::http::Status::Normal, nullptr);
   });
 }

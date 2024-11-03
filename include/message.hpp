@@ -152,10 +152,12 @@ namespace message
     {
       /** 正常 */
       Normal,
+      /** 操作失败 */
+      OperationFail = 1001,
       /** 任务不存在 */
-      TaskNotExit = 1001,
+      TaskNotExit = 1002,
       /** 参数解析失败 */
-      ParamsParseFail = 1002
+      ParamsParseFail = 1003
     };
 
     /**

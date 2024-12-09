@@ -104,13 +104,15 @@ void TaskTable::run(Task task, Config* config)
       runBefore.startTime = result.startTime;
       Cron cron = task.cronRange;
       if (task.loop) {
+#ifndef NDEBUG
+        Log::debug("cron: {}", task.cron);
+#endif
         date::sys_seconds nextRunTime = cron.getNextRunTime(startTimePoint);
         runBefore.nextRunTime = util::getFormatTime("%Y-%m-%d %H:%M:%S", &nextRunTime);
       }
       notify::taskStart(config->getNotifyUrl(), &runBefore);
     });
     taskStartNotifyThread.detach();
-
     Process process(task.execFile, task.args);
     result.isNormalExit = process.getExitStatus() == 0;
     auto endTime = std::chrono::system_clock::now();
@@ -146,7 +148,7 @@ void TaskTable::set(Task task)
     }
     catch(const std::exception& e)
     {
-      Log::error("<{}> Cron parse fail: {}", "task_table", task.cron);
+      throw std::invalid_argument("Cron parse fail: " + std::string(e.what()));
     }
   }
 
@@ -160,7 +162,7 @@ void TaskTable::set(Task task)
   }
   if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
     Log::error("<{}> sqlite {} sql prepare fail: [{}] {}", "task_table", std::string(isExist?"update":"insert"), task.uuid, std::string(sqlite3_errmsg(db)));
-    return;
+    throw std::invalid_argument("sql prepare fail");
   }
 
   sqlite3_bind_text(stmt, 1, task.execFile.c_str(), -1, SQLITE_STATIC);
@@ -172,6 +174,7 @@ void TaskTable::set(Task task)
 
   if (sqlite3_step(stmt) != SQLITE_DONE) {
     Log::error("<{}> sqlite {} fail: [{}] {}", "task_table", std::string(isExist?"update":"insert"), task.uuid, std::string(sqlite3_errmsg(db)));
+    throw std::invalid_argument("sqlite save fail");
   }
   sqlite3_finalize(stmt);
 }
@@ -189,11 +192,12 @@ void TaskTable::remove(std::string uuid)
   std::string sql("DELETE FROM task WHERE uuid = ?");
   if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
     Log::error("<{}> sqlite delete sql prepare fail: [{}] {}", "task_table", uuid, std::string(sqlite3_errmsg(db)));
-    return;
+    throw std::invalid_argument("sql prepare fail");
   }
   sqlite3_bind_text(stmt, 1, uuid.c_str(), -1, SQLITE_STATIC);
   if (sqlite3_step(stmt) != SQLITE_DONE) {
-     Log::error("<{}> sqlite delete fail: [{}] {}", "task_table", uuid, std::string(sqlite3_errmsg(db)));
+    Log::error("<{}> sqlite delete fail: [{}] {}", "task_table", uuid, std::string(sqlite3_errmsg(db)));
+    throw std::invalid_argument("sqlite delete fail");
   }
   sqlite3_finalize(stmt);
 }

@@ -36,14 +36,12 @@ namespace notify
     nlohmann::json json;
     json["event"] = message::NotifyEvent::TaskFinish;
     json["data"] = *runResult;
-    Log::info("<{}> task_finish [uuid:{},start_time:{},runtime:{},is_normal_exit:{},out:{},err:{}]",
+    Log::info("<{}> task_finish [uuid:{},start_time:{},runtime:{},is_normal_exit:{}]",
       "notify",
       runResult->uuid,
       runResult->startTime,
       runResult->runtime,
-      runResult->isNormalExit,
-      runResult->out,
-      runResult->err);
+      runResult->isNormalExit);
     httplib::Result res = request(url, json);
     return res.error() == httplib::Error::Success && res.value().status == 200;
   }

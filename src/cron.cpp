@@ -83,7 +83,7 @@ Cron Cron::parse(std::string cron)
     cron = match.suffix().str();
   }
   
-  if (itemList.size() != 5 && itemList.size() != 6) throw std::invalid_argument("The Cron format is incorrect: " + cronBak);
+  if (itemList.size() != 5 && itemList.size() != 6) throw std::invalid_argument("The Cron format is incorrect");
   // 如果输入的是分钟级别的Cron，秒默认是 0
   if (itemList.size() == 5) itemList.insert(itemList.begin(), "0");
   return Cron(
@@ -127,6 +127,9 @@ unsigned long Cron::parseItem(std::string cronItem, unsigned short min, unsigned
   for(unsigned short item: set) {
     result |= static_cast<unsigned long>(1) << item;
   }
+  if (result == 0) {
+    throw std::invalid_argument("The Cron format is incorrect");
+  }
   return result;
 }
 
@@ -145,6 +148,9 @@ date::sys_seconds Cron::getNextRunTime(date::sys_seconds time)
 void Cron::calculateNextRunMonth(date::sys_seconds &time)
 {
   tm tm = util::getLocaltime(&time);
+#ifndef NDEBUG
+  Log::debug("month: {}-{}-{} {}:{}:{}", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+#endif
   unsigned short current = tm.tm_mon + 1;
   unsigned short result = getMonth() & (monthRange << current);
   if (result == 0) {
@@ -183,6 +189,9 @@ void Cron::calculateNextRunMonth(date::sys_seconds &time)
 void Cron::calculateNextRunDay(date::sys_seconds &time)
 {
   tm tm = util::getLocaltime(&time);
+#ifndef NDEBUG
+  Log::debug("day: {}-{}-{} {}:{}:{}", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+#endif
   unsigned short current = tm.tm_mday;
   unsigned int result = getDay() & (dayRange << current);
   if (result == 0) {
@@ -217,6 +226,9 @@ void Cron::calculateNextRunDay(date::sys_seconds &time)
 void Cron::calculateNextRunHour(date::sys_seconds &time)
 {
   tm tm = util::getLocaltime(&time);
+#ifndef NDEBUG
+  Log::debug("hour: {}-{}-{} {}:{}:{}", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+#endif
   unsigned short current = tm.tm_hour;
   unsigned int result = getHour() & (hourRange << current);
   if (result == 0) {
@@ -247,6 +259,9 @@ void Cron::calculateNextRunHour(date::sys_seconds &time)
 void Cron::calculateNextRunMinute(date::sys_seconds &time)
 {
   tm tm = util::getLocaltime(&time);
+#ifndef NDEBUG
+  Log::debug("minute: {}-{}-{} {}:{}:{}", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+#endif
   unsigned short current = tm.tm_min;
   unsigned long result = getMinute() & (minuteRange << current);
   if (result == 0) {
@@ -274,6 +289,9 @@ void Cron::calculateNextRunMinute(date::sys_seconds &time)
 void Cron::calculateNextRunSecond(date::sys_seconds &time)
 {
   tm tm = util::getLocaltime(&time);
+#ifndef NDEBUG
+  Log::debug("second: {}-{}-{} {}:{}:{}", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+#endif
   unsigned short current = tm.tm_sec;
   unsigned long result = getSecond() & (secondRange << current);
   if (result == 0) {
@@ -300,6 +318,9 @@ void Cron::calculateNextRunSecond(date::sys_seconds &time)
 void Cron::calculateNextRunWeek(date::sys_seconds &time)
 {
   tm tm = util::getLocaltime(&time);
+#ifndef NDEBUG
+  Log::debug("week: {}-{}-{} {}:{}:{}", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+#endif
   unsigned short current = tm.tm_wday;
   unsigned long result = getWeek() & (weekRange << current);
   if (result == 0) {

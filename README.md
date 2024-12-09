@@ -54,10 +54,10 @@ systemctl enable timer
 ~~~
 
 管理服务  
-启动: `systemctl start panel`  
-停止: `systemctl stop panel`  
-重启: `systemctl restart panel`  
-重载配置: `systemctl reload panel`
+启动: `systemctl start timer`  
+停止: `systemctl stop timer`  
+重启: `systemctl restart timer`  
+重载配置: `systemctl reload timer`
 
 
 ## 配置
